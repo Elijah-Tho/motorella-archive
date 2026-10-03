@@ -1,0 +1,25 @@
+<!--
+  Motorella Archive: Webflow custom code
+  Page Settings > Custom Code. Replace YOUR-GITHUB-NAME and the version with your own.
+  The repo holds motorella-archive.min.js with the world/ folder next to it.
+-->
+
+<!-- ===== Inside <head> tag ===== -->
+<style>
+  .archive-stage { position: fixed; inset: 0; z-index: 1; }
+  .archive-stage [data-mtla-look], .archive-stage .w-dyn-list { display: none; }
+</style>
+
+<!-- ===== Before </body> tag ===== -->
+<script src="https://cdn.jsdelivr.net/gh/YOUR-GITHUB-NAME/motorella-archive@1.4.0/motorella-archive.min.js" defer></script>
+
+<!--
+  The stage (build this in the Designer, or paste it into an Embed element):
+
+  <div class="archive-stage" data-mtla-archive="true" data-collection="01" data-min-frames="16">
+    <img data-mtla-look="true" src="LOOK-01-URL" alt="Look 01">
+    <img data-mtla-look="true" src="LOOK-02-URL" alt="Look 02">
+    <img data-mtla-look="true" src="LOOK-03-URL" alt="Look 03">
+    <img data-mtla-look="true" src="LOOK-04-URL" alt="Look 04">
+  </div>
+-->
