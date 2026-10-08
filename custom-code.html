@@ -1,7 +1,7 @@
 <!--
-  Motorella Archive: Webflow custom code
-  Page Settings > Custom Code. Replace YOUR-GITHUB-NAME and the version with your own.
-  The repo holds motorella-archive.min.js with the world/ folder next to it.
+  Motorella Archive: Webflow custom code (1.5.0)
+  Page Settings > Custom Code, on both archive pages (Collection 01 and Motorella Nine to Five).
+  The repo Elijah-Tho/motorella-archive holds motorella-archive.min.js with the city and office files beside it.
 -->
 
 <!-- ===== Inside <head> tag ===== -->
@@ -11,15 +11,20 @@
 </style>
 
 <!-- ===== Before </body> tag ===== -->
-<script src="https://cdn.jsdelivr.net/gh/YOUR-GITHUB-NAME/motorella-archive@1.4.1/motorella-archive.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@1.5.0/motorella-archive.min.js" defer></script>
 
 <!--
-  The stage (build this in the Designer, or paste it into an Embed element):
+  The stage (build this in the Designer, or paste it into an Embed element).
 
+  Collection 01 (the city):
   <div class="archive-stage" data-mtla-archive="true" data-collection="01" data-min-frames="16">
     <img data-mtla-look="true" src="LOOK-01-URL" alt="Look 01">
-    <img data-mtla-look="true" src="LOOK-02-URL" alt="Look 02">
-    <img data-mtla-look="true" src="LOOK-03-URL" alt="Look 03">
-    <img data-mtla-look="true" src="LOOK-04-URL" alt="Look 04">
+    ...
+  </div>
+
+  Motorella Nine to Five (the office):
+  <div class="archive-stage" data-mtla-archive="true" data-collection="02" data-world="office" data-seed="MOTORELLA-NTF" data-min-frames="16">
+    <img data-mtla-look="true" src="LOOK-01-URL" alt="Look 01">
+    ...
   </div>
 -->
