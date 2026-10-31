@@ -134,10 +134,12 @@
     '  .mh.is-menu .mh-sheet{opacity:1;visibility:visible;transition:opacity .35s ease,filter .45s ease}',
     '  .mh.is-menu .mh-glass,.mh.is-menu:hover .mh-glass{height:100vh;height:100dvh;background:rgba(14,14,16,.5);-webkit-backdrop-filter:blur(10px) saturate(1.1);backdrop-filter:blur(10px) saturate(1.1)}',
     '  .mh-sitem{padding:12px 0}',
-    '  .mh-sitem>.mh-top{font-size:13px;padding:4px 0;display:flex;justify-content:space-between;width:100%;text-align:left}',
-    '  .mh-sitem>.mh-top b{display:inline-block;font-weight:400;font-size:15px;line-height:1;transition:transform .5s cubic-bezier(.2,.75,.15,1)}',
+    '  .mh-sitem>.mh-top{font-size:13px;padding:4px 0;display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left}',
+    // the plus is drawn with two bars so it turns about its true centre: a quarter and a half round, and it is an x
+    '  .mh-sitem>.mh-top b{position:relative;display:block;flex:none;width:11px;height:11px;font-size:0;transition:transform .5s cubic-bezier(.2,.75,.15,1)}',
+    '  .mh-sitem>.mh-top b:before,.mh-sitem>.mh-top b:after{content:"";position:absolute;left:0;top:50%;width:100%;height:1.5px;margin-top:-.75px;background:currentColor}',
+    '  .mh-sitem>.mh-top b:after{transform:rotate(90deg)}',
     '  .mh-sitem.is-open>.mh-top b{transform:rotate(135deg)}',
-    '  .mh-sitem>.mh-top b.is-turning{animation:mhx .5s ease}',
     '  .mh-sheet{filter:blur(6px)}.mh.is-menu .mh-sheet{filter:blur(0)}',
     '  .mh-ssub{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s cubic-bezier(.2,.75,.15,1)}',
     '  .mh-sitem.is-open .mh-ssub{grid-template-rows:1fr}',
@@ -183,6 +185,17 @@
     '.mhome-panel[data-fit=contain]{background:#f1f1f1}',
     // the first screen is the page's own background (the room), exactly where it always was: the bubbles line up with it
     '.mhome-panel.mhome-hero{background:transparent}',
+    '.mhome-panel.mhome-model{background:#fff}',
+    '.mhome-model .mhome-stage{position:absolute;inset:0;opacity:0;filter:blur(10px);transform:scale(.97);transition:opacity 1.1s ease,filter 1.3s ease,transform 1.4s cubic-bezier(.2,.75,.15,1)}',
+    '.mhome-model .mhome-stage canvas{display:block;width:100%!important;height:100%!important;outline:none;cursor:grab}',
+    '.mhome-model .mhome-stage canvas:active{cursor:grabbing}',
+    '.mhome-model.is-loaded .mhome-stage{opacity:1;filter:blur(0);transform:none}',
+    '.mhome-model .mhome-over,.mhome-video .mhome-over{justify-content:flex-end;padding-bottom:13vh;box-sizing:border-box}',
+    // the film is 16:9 and its action runs to the very top and bottom of the frame, so on wide screens the panel takes
+    // the film's own shape and nothing is cropped; on phones it fills the screen and is cropped at the sides instead
+    '.mhome-panel.mhome-video{background:#e9e9ea;height:56.25vw;min-height:0}',
+    '.mhome-video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%}',
+    '@media (max-width:' + NARROW + 'px){.mhome-panel.mhome-video{height:100vh;height:100svh;min-height:520px}}',
     '@media (max-width:' + NARROW + 'px){html.mh-home body{background-image:none!important}.mhome-panel.mhome-hero{background:var(--mh-room) 69% 50%/cover no-repeat}}',
     '.mhome-wordmark{position:absolute;left:var(--mh-pad,40px);top:calc(var(--mh-row) + 54px);width:min(300px,52vw);height:auto;z-index:2}',
     '.mhome-over{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center;pointer-events:none}',
@@ -193,21 +206,17 @@
     '.mhome-cap small{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;opacity:.65}',
     '.mhome-cap b{font-size:20px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}',
     '.mhome-panel[data-theme=dark] .mhome-cap{color:#f2f2f2}',
+    // square glass, no edge, white letters; it darkens under the pointer
     '.mhome-btn{position:relative;transform:translateY(8px);display:inline-flex;align-items:center;justify-content:center;',
-    '  min-width:170px;height:44px;padding:0 26px;box-sizing:border-box;border-radius:999px;text-decoration:none;',
-    '  font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#2e2e2e;',
-    '  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.22));border:1px solid rgba(255,255,255,.7);',
-    '  box-shadow:0 10px 30px rgba(40,40,50,.12),inset 0 1px 0 rgba(255,255,255,.75),inset 0 -1px 0 rgba(60,60,70,.06);',
-    '  -webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6);',
-    '  opacity:0;transition:opacity .7s ease .3s,transform .8s cubic-bezier(.2,.75,.15,1) .3s,background .3s ease,box-shadow .3s ease}',
+    '  min-width:170px;height:44px;padding:0 26px;box-sizing:border-box;border:0;border-radius:0;text-decoration:none;',
+    '  font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#fff!important;',
+    '  background:rgba(24,24,28,.42);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);',
+    '  opacity:0;transition:opacity .7s ease .3s,transform .8s cubic-bezier(.2,.75,.15,1) .3s,background-color .3s ease}',
     '.mhome-panel.is-in .mhome-btn{opacity:1;transform:none}',
-    '.mhome-btn:hover{background:linear-gradient(180deg,rgba(255,255,255,.75),rgba(255,255,255,.38));box-shadow:0 14px 36px rgba(40,40,50,.16),inset 0 1px 0 rgba(255,255,255,.9)}',
-    '.mhome-panel[data-theme=dark] .mhome-btn{color:#f6f6f6;background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,.06));border-color:rgba(255,255,255,.38);',
-    '  box-shadow:0 10px 30px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.35)}',
-    '.mhome-panel[data-theme=dark] .mhome-btn:hover{background:linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,.12))}',
+    '.mhome-btn:hover,.mhome-btn:focus-visible{background-color:rgba(14,14,17,.68)}',
+    '.mhome-btn:focus-visible{outline:1px solid rgba(255,255,255,.7);outline-offset:3px}',
     '.mhome-cue{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:2;font-size:8px;font-weight:700;letter-spacing:.2em;color:rgba(60,60,60,.5);',
     '  animation:mhcue 2.4s ease-in-out infinite}',
-    '@keyframes mhx{0%{filter:blur(0)}45%{filter:blur(2.5px)}100%{filter:blur(0)}}',
     '@keyframes mhcue{0%,100%{transform:translate(-50%,0);opacity:.5}50%{transform:translate(-50%,4px);opacity:1}}',
     '.mhome-foot{padding:28px var(--mh-pad,40px) 34px;font-size:9px;letter-spacing:.12em;color:rgba(60,60,60,.55);text-align:center;background:#f1f1f1}',
     '@media (max-width:' + NARROW + 'px){',
@@ -255,6 +264,7 @@
     '.mini-cart-plus{width:7px;height:7px;object-fit:contain;pointer-events:none;margin:0 8px 0 3px;flex-shrink:0}',
     '.cart-toggle{letter-spacing:.05em;font-size:11px}',
     '[data-cart-toggle],[data-remove-id]{cursor:pointer}',
+    '[data-remove-id]:hover,#motorella-cart .cart-item-remove:hover{text-decoration:underline}',
     '#motorella-cart{position:fixed;width:323px;height:276px;min-height:276px;max-height:80vh;overflow-y:hidden;background:rgba(255,255,255,.35);-webkit-backdrop-filter:blur(4px) saturate(1.1);backdrop-filter:blur(4px) saturate(1.1);border:1px solid rgba(255,255,255,.5);border-radius:4px;padding:16px;box-sizing:border-box;opacity:0;transform:translateY(-8px);filter:blur(4px);pointer-events:none;transition:opacity .35s,transform .35s,filter .4s ease,height .4s cubic-bezier(.22,.9,.32,1)}',
     '#motorella-cart.is-open{opacity:1;transform:none;filter:blur(0);pointer-events:auto}',
     '.cart-item{display:flex;gap:12px;margin-bottom:20px}.cart-item:last-child{margin-bottom:0}',
@@ -450,13 +460,9 @@
     } else if (it.sub && inSheet) {
       top = el('button', 'mh-top', wrap);
       top.type = 'button';
-      top.innerHTML = '<span></span><b>+</b>';
+      top.innerHTML = '<span></span><b aria-hidden="true">+</b>';
       top.firstChild.textContent = it.label;
       top.addEventListener('click', function () {
-        var b = top.querySelector('b');
-        b.classList.remove('is-turning');
-        void b.offsetWidth;
-        b.classList.add('is-turning');
         var was = wrap.classList.contains('is-open');
         [].forEach.call(H.sheet.querySelectorAll('.mh-sitem.is-open'), function (x) { x.classList.remove('is-open'); });
         if (!was) wrap.classList.add('is-open');
@@ -614,28 +620,44 @@
     });
     var ok = w.querySelector('.close-menu');
     if (ok) ok.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); w.style.display = 'none'; });
-    // drag by the title bar
-    var bar = w.querySelector('.info-text-div') || w;
+    // drag by the title bar (the "information" strip along the top), the same on every page.
+    // The press is claimed outright so the browser never starts a text selection or a native
+    // image drag underneath, which is what used to cancel the move on pages other than home.
     var d = null;
-    bar.addEventListener('pointerdown', function (e) {
-      if (e.target.closest('a,button')) return;
+    var t0 = w.querySelector('.info-text');
+    if (t0) { t0.style.touchAction = 'none'; t0.style.userSelect = 'none'; t0.style.webkitUserSelect = 'none'; }
+    function onBar(e) {
+      if (e.target.closest('a,button,input,textarea,select,[class*="-tab"],[class*="-content"],.close-menu')) return false;
+      if (e.target.closest('.info-text-div,.info-text')) return true;
+      return e.clientY - w.getBoundingClientRect().top < 30;
+    }
+    w.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0 || !onBar(e)) return;
+      // taken in the capture phase so no other drag code on the page starts a second, competing move
+      e.preventDefault();
+      e.stopPropagation();
       var r = w.getBoundingClientRect();
-      d = { x: e.clientX - r.left, y: e.clientY - r.top };
+      d = { x: e.clientX - r.left, y: e.clientY - r.top, id: e.pointerId };
       w.style.left = r.left + 'px';
       w.style.top = r.top + 'px';
       w.style.right = 'auto';
       w.style.bottom = 'auto';
       w.style.margin = '0';
       w.style.transform = 'none';
-      try { bar.setPointerCapture(e.pointerId); } catch (err) {}
-    });
-    bar.addEventListener('pointermove', function (e) {
-      if (!d) return;
+      try { w.setPointerCapture(e.pointerId); } catch (err) {}
+    }, true);
+    w.addEventListener('pointermove', function (e) {
+      if (!d || e.pointerId !== d.id) return;
+      e.preventDefault();
       var r = w.getBoundingClientRect();
       w.style.left = Math.max(-r.width + 60, Math.min(window.innerWidth - 60, e.clientX - d.x)) + 'px';
       w.style.top = Math.max(0, Math.min(window.innerHeight - 40, e.clientY - d.y)) + 'px';
     });
-    bar.addEventListener('pointerup', function () { d = null; });
+    function end() { d = null; }
+    w.addEventListener('pointerup', end);
+    w.addEventListener('pointercancel', end);
+    w.addEventListener('lostpointercapture', end);
+    w.addEventListener('dragstart', function (e) { e.preventDefault(); });
     return w;
   }
   function showTab(w, t) {
@@ -762,17 +784,166 @@
   }
 
   // ------------------------------------------------------------------------------------------------ home
-  var IMG = 'https://cdn.prod.website-files.com/695c3941708641fce1ce0631/';
-  // Until the campaign shoot: the pictures already on the site. Each: image, fit (cover|contain), theme (light|dark: the
-  // picture's tone, so text and the header stay readable), small/title (caption), button and where it goes.
+  // Panels after the room. Each is { kind: 'model' | 'video', src, button, href } or a still picture
+  // { image, fit (cover|contain), theme (light|dark), small/title (caption), button, href }.
+  // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
+  var MEDIA = (function () {
+    var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.1.0/';
+  })();
+  // After the room: the cap in 3D, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
-    { image: IMG + '6aa70a4e5e1e0993e9335b4c_model%20pose%201.png', fit: 'contain', theme: 'light', small: '', title: '', button: 'Shop all', href: P.shop },
-    { image: IMG + '6aa70a5147d62244c9ea8e39_model%20pose%203.png', fit: 'contain', theme: 'light', small: 'Collection 01', title: 'The archive', button: 'View collection', href: P.c01 },
-    { image: IMG + '6a86a78ec1af7b45541ef4de_boots%20grey%20web.png', fit: 'contain', theme: 'light', small: 'Shoes', title: 'Anatomic bootie', button: 'Shop all', href: P.shop + '?type=shoes' },
-    { image: IMG + '6aa70a53f884d4a1be0df4fc_model%20pose%204.png', fit: 'contain', theme: 'light', small: 'Nine to Five', title: 'Office hours', button: 'View collection', href: P.ntf },
-    { image: IMG + '6a86a78f15ce9b0d9bdf0de5_padded%20top%20grey%20web.png', fit: 'contain', theme: 'light', small: 'Tops', title: 'Padded shoulder top', button: 'Shop all', href: P.shop + '?type=tops' },
-    { image: IMG + '6aa70a4f438f7b41b4982a5d_model%20pose%202.png', fit: 'contain', theme: 'light', small: 'All collections', title: 'Archive +', button: 'View archive', href: P.archive }
+    { kind: 'model', src: 'https://d8j0ntlcm91z4.cloudfront.net/user_37rM5MKDTigahhjI4yQJMOQzK2I/hf_20261031_062113_e249cc94-1885-40c1-8296-07b2b5b50a87.glb', alt: 'motorella cap', button: 'View now', href: P.shop },
+    // no button on the film: anywhere it sits, it covers the fall or the airbag
+    { kind: 'video', src: MEDIA + 'motorella-airbag.mp4', poster: MEDIA + 'motorella-airbag-poster.jpg', button: false }
   ];
+  // A 3D piece on white: turns by itself, can be dragged round, and goes back to turning a moment after it is let go.
+  // Drawn with three.js, loaded only when the panel is about to come into view. A brushed metal clasp engraved with
+  // the m mark is built here and set on the back strap (p.clasp: its place on the model, or false for none).
+  var TB = 'https://cdn.jsdelivr.net/npm/three@0.160.0/';
+  function overlay(s, p) {
+    var over = el('div', 'mhome-over', s);
+    if (p.small || p.title) {
+      var cap = el('div', 'mhome-cap', over);
+      if (p.small) el('small', '', cap, p.small);
+      if (p.title) el('b', '', cap, p.title);
+    }
+    if (p.button === false) return;
+    var b = el('a', 'mhome-btn', over, p.button || 'View now');
+    b.href = p.href || P.shop;
+  }
+  function whenNear(node, fn) {
+    if (!('IntersectionObserver' in window)) return fn();
+    var io = new IntersectionObserver(function (en) {
+      if (en.some(function (x) { return x.isIntersecting; })) { io.disconnect(); fn(); }
+    }, { rootMargin: '100% 0px' });
+    io.observe(node);
+  }
+  function modelPanel(main, p) {
+    var s = el('section', 'mhome-panel mhome-model', main);
+    s.setAttribute('data-theme', 'light');
+    s.setAttribute('data-mh-theme', 'light');
+    var stage = el('div', 'mhome-stage', s);
+    stage.setAttribute('aria-label', p.alt || 'motorella');
+    overlay(s, p);
+    whenNear(s, function () {
+      Promise.all([
+        import(TB + '+esm'),
+        import(TB + 'examples/jsm/loaders/GLTFLoader.js/+esm'),
+        import(TB + 'examples/jsm/controls/OrbitControls.js/+esm'),
+        import(TB + 'examples/jsm/environments/RoomEnvironment.js/+esm'),
+        import(TB + 'examples/jsm/geometries/RoundedBoxGeometry.js/+esm')
+      ]).then(function (m) { return build(m[0], m[1].GLTFLoader, m[2].OrbitControls, m[3].RoomEnvironment, m[4].RoundedBoxGeometry); })
+        .catch(function (e) { if (window.console) console.warn('motorella 3d', e); });
+    });
+
+    function build(THREE, GLTFLoader, OrbitControls, RoomEnvironment, RoundedBoxGeometry) {
+      var r = new THREE.WebGLRenderer({ antialias: true });
+      r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      r.outputColorSpace = THREE.SRGBColorSpace;
+      r.toneMapping = THREE.ACESFilmicToneMapping;
+      r.toneMappingExposure = 0.95;
+      stage.appendChild(r.domElement);
+      var scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xffffff);
+      var pm = new THREE.PMREMGenerator(r);
+      scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+      scene.add(new THREE.HemisphereLight(0xffffff, 0xd8d8dc, 0.9));
+      var key = new THREE.DirectionalLight(0xffffff, 1.1); key.position.set(-2, 3, -2); scene.add(key);
+      var fill = new THREE.DirectionalLight(0xffffff, 0.6); fill.position.set(2, 2, 3); scene.add(fill);
+      var cam = new THREE.PerspectiveCamera(30, 1, 0.01, 100);
+
+      return new GLTFLoader().loadAsync(p.src).then(function (g) {
+        var piece = new THREE.Group();
+        piece.add(g.scene);
+        g.scene.traverse(function (o) { if (o.isMesh && o.material) { o.material.metalness = 0; o.material.needsUpdate = true; } });
+        if (p.clasp !== false) piece.add(clasp(THREE, RoundedBoxGeometry, p.clasp || [-0.2, -0.2, -0.885]));
+        var box = new THREE.Box3().setFromObject(piece);
+        var c = box.getCenter(new THREE.Vector3());
+        piece.position.sub(c);
+        scene.add(piece);
+        var rad = box.getSize(new THREE.Vector3()).length() / 2;
+        // p.scale: how much of the screen the piece fills (smaller number = smaller piece)
+        var dist = rad / Math.sin(THREE.MathUtils.degToRad(cam.fov / 2)) / (p.scale || 0.5);
+        var az = THREE.MathUtils.degToRad(p.azimuth == null ? 35 : p.azimuth), el2 = THREE.MathUtils.degToRad(14);
+        cam.position.set(Math.sin(az) * Math.cos(el2) * dist, Math.sin(el2) * dist, Math.cos(az) * Math.cos(el2) * dist);
+        var ctl = new OrbitControls(cam, r.domElement);
+        ctl.enableZoom = false; ctl.enablePan = false; ctl.enableDamping = true; ctl.dampingFactor = 0.08;
+        ctl.minPolarAngle = Math.PI * 0.3; ctl.maxPolarAngle = Math.PI * 0.6;
+        ctl.autoRotate = true; ctl.autoRotateSpeed = 2.2;
+        r.domElement.style.touchAction = 'pan-y';
+        var back = 0;
+        ctl.addEventListener('start', function () { clearTimeout(back); ctl.autoRotate = false; });
+        ctl.addEventListener('end', function () { clearTimeout(back); back = setTimeout(function () { ctl.autoRotate = true; }, 1200); });
+
+        function size() {
+          var w = stage.clientWidth || 1, h = stage.clientHeight || 1;
+          r.setSize(w, h, false); cam.aspect = w / h;
+          // keep the whole piece in frame on a narrow screen
+          cam.fov = w < h ? 30 * Math.min(1.6, h / w * 0.75) : 30;
+          cam.updateProjectionMatrix();
+        }
+        size();
+        window.addEventListener('resize', size);
+        var on = true, raf = 0, first = true;
+        function loop() {
+          raf = requestAnimationFrame(loop);
+          ctl.update(); r.render(scene, cam);
+          if (first) { first = false; s.classList.add('is-loaded'); }
+        }
+        if ('IntersectionObserver' in window) {
+          new IntersectionObserver(function (en) {
+            var vis = en.some(function (x) { return x.isIntersecting; });
+            if (vis && !raf) loop();
+            if (!vis && raf) { cancelAnimationFrame(raf); raf = 0; }
+          }).observe(s);
+        } else loop();
+      });
+    }
+  }
+  // the back clasp: rounded brushed-metal plate, the m mark engraved in its face
+  function clasp(THREE, RoundedBoxGeometry, at) {
+    var grp = new THREE.Group();
+    var metal = new THREE.MeshPhysicalMaterial({ color: 0xc4c7cc, metalness: 0.85, roughness: 0.32, envMapIntensity: 1.6, clearcoat: 0.2 });
+    grp.add(new THREE.Mesh(new RoundedBoxGeometry(0.15, 0.1, 0.02, 3, 0.008), metal));
+    var cv = document.createElement('canvas'); cv.width = 512; cv.height = 342;
+    var tex = new THREE.CanvasTexture(cv);
+    var mark = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.1), new THREE.MeshPhysicalMaterial({ color: 0x55585d, metalness: 0.7, roughness: 0.75, alphaMap: tex, transparent: true, opacity: 0.95, depthWrite: false }));
+    mark.position.z = -0.0102; mark.rotation.y = Math.PI;
+    grp.add(mark);
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function () {
+      var c = cv.getContext('2d'), k = Math.min(cv.width * 0.62 / img.width, cv.height * 0.62 / img.height);
+      var w = img.width * k, h = img.height * k;
+      c.drawImage(img, (cv.width - w) / 2, (cv.height - h) / 2, w, h);
+      c.globalCompositeOperation = 'source-in'; c.fillStyle = '#fff'; c.fillRect(0, 0, cv.width, cv.height);
+      c.globalCompositeOperation = 'destination-over'; c.fillStyle = '#000'; c.fillRect(0, 0, cv.width, cv.height);
+      tex.needsUpdate = true;
+    };
+    img.src = LOGO;
+    grp.position.set(at[0], at[1], at[2]);
+    grp.scale.setScalar(0.85);
+    return grp;
+  }
+  // A short film that loops without sound, playing only while it is on screen.
+  function videoPanel(main, p) {
+    var s = el('section', 'mhome-panel mhome-video', main);
+    s.setAttribute('data-theme', p.theme || 'light');
+    s.setAttribute('data-mh-theme', p.theme || 'light');
+    var v = el('video', '', s);
+    v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'none';
+    v.setAttribute('muted', ''); v.setAttribute('playsinline', '');
+    if (p.poster) v.poster = p.poster;
+    overlay(s, p);
+    whenNear(s, function () { v.src = p.src; v.preload = 'auto'; });
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (en) {
+        en.forEach(function (x) { if (x.isIntersecting) { var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); } else v.pause(); });
+      }, { threshold: 0.2 }).observe(s);
+    } else v.autoplay = true;
+  }
+
   function home() {
     document.documentElement.classList.add('mh-home');
     // panels can also be laid out in Webflow: [data-mtla-home] > [data-panel] with data-image, data-fit, data-theme,
@@ -810,6 +981,8 @@
     }
 
     list.forEach(function (p) {
+      if (p.kind === 'model') return modelPanel(main, p);
+      if (p.kind === 'video') return videoPanel(main, p);
       var s = el('section', 'mhome-panel', main);
       s.setAttribute('data-fit', p.fit || 'cover');
       s.setAttribute('data-theme', p.theme || 'light');
