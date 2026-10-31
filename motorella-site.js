@@ -220,6 +220,8 @@
     '  animation:mhcue 2.4s ease-in-out infinite}',
     '@keyframes mhcue{0%,100%{transform:translate(-50%,0);opacity:.5}50%{transform:translate(-50%,4px);opacity:1}}',
     '.mhome-foot{padding:28px var(--mh-pad,40px) 34px;font-size:9px;letter-spacing:.12em;color:rgba(60,60,60,.55);text-align:center;background:#f1f1f1}',
+    '.mhome-foot.is-over{position:absolute;left:0;right:0;bottom:0;z-index:3;padding:0 var(--mh-pad,40px) 22px;background:none;',
+    '  color:rgba(255,255,255,.88);text-shadow:0 0 8px rgba(0,0,0,.28);pointer-events:none}',
     '@media (max-width:' + NARROW + 'px){',
     '  .mhome-cap b{font-size:16px}',
     '  .mhome-btn{min-width:150px;height:42px}',
@@ -1002,7 +1004,9 @@
       var b = el('a', 'mhome-btn', over, p.button || 'Shop all');
       b.href = p.href || P.shop;
     });
-    el('footer', 'mhome-foot', main, '© ' + new Date().getFullYear() + ', motorella');
+    // the copyright sits over the bottom of the last panel (the film), so the page ends on it with no strip below
+    var lastPanel = main.lastElementChild;
+    el('footer', 'mhome-foot' + (lastPanel && lastPanel !== hero ? ' is-over' : ''), lastPanel && lastPanel !== hero ? lastPanel : main, '© ' + new Date().getFullYear() + ', motorella');
 
     // the page goes first in the body; the old fixed navigation hides (its links are in the header now)
     document.body.insertBefore(main, document.body.firstChild);
