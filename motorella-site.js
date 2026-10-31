@@ -35,7 +35,7 @@
       { label: 'Tops', href: P.shop + '?type=tops', type: 'tops' },
       { label: 'Shoes', href: P.shop + '?type=shoes', type: 'shoes' }
     ] },
-    { label: 'Archive +', href: P.archive, sub: [
+    { label: 'Archive', href: P.archive, sub: [
       { label: 'View archive', href: P.archive },
       { label: 'Collection 01', ways: { classic: '', legacy: P.c01 } },
       { label: 'Nine to Five', ways: { classic: '', legacy: P.ntf } },
@@ -710,12 +710,20 @@
   function setShopType(type, quiet) {
     var dot = document.querySelector('.mtla-dot[data-mtla-role="type"]');
     if (!dot) return;
-    // the fabric button's type dot steps through all → tops → shoes → all …: step until it shows what was asked
-    for (var i = 0; i < 8; i++) {
-      var v = visibleTypes();
-      if (type ? v.length === 1 && v[0] === type : v.length > 1) break;
-      dot.click();
-    }
+    // the fabric button's type dot steps all (no colour) → tops (blue) → shoes (pink) → all …, and its colour changes at
+    // once while the cards take a moment to fade, so step by the colour, never by what is on screen yet
+    var want = type === 'tops' ? 'blue' : type === 'shoes' ? 'pink' : '';
+    var state = function () { return dot.getAttribute('data-mtla-state') || ''; };
+    for (var i = 0; i < 3 && state() !== want; i++) dot.click();
+    // once the cards have settled, make sure they show what was asked (in case the shop's colours ever change)
+    var tries = 0;
+    (function check() {
+      setTimeout(function () {
+        var v = visibleTypes();
+        if (type ? v.length === 1 && v[0] === type : v.length > 1) return;
+        if (tries++ < 3) { dot.click(); check(); }
+      }, 550);
+    })();
     if (!quiet || true) {
       var u = new URL(location.href);
       if (type) u.searchParams.set('type', type);
