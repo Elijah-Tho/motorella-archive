@@ -156,7 +156,7 @@
     '@media (prefers-reduced-motion:reduce){.mh *,.mh{transition:none!important}}',
     // the information window, wherever it is opened
     '.info-window{z-index:1100!important}',
-    '.info-window .info-text-div{cursor:move}',
+    '.info-window .info-text-div,.info-window .info-bg{cursor:move}',
     // pages: keep their own labels clear of the header
     'html.mh-on .sidebar{top:calc(var(--mh-row) + 34px)!important}',
     // shop
@@ -633,16 +633,18 @@
     });
     var ok = w.querySelector('.close-menu');
     if (ok) ok.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); w.style.display = 'none'; });
-    // drag by the title bar (the "information" strip along the top), the same on every page.
-    // The press is claimed outright so the browser never starts a text selection or a native
-    // image drag underneath, which is what used to cancel the move on pages other than home.
+    // drag from anywhere on the window, as on the home page: everything but the tabs, the OK button, links and the
+    // text box's scrollbar. The press is claimed outright so the browser never starts a text selection or a native
+    // image drag underneath (that is what used to cancel the move on pages other than home).
     var d = null;
-    var t0 = w.querySelector('.info-text');
-    if (t0) { t0.style.touchAction = 'none'; t0.style.userSelect = 'none'; t0.style.webkitUserSelect = 'none'; }
+    w.style.touchAction = 'none';
+    w.style.userSelect = 'none'; w.style.webkitUserSelect = 'none';
+    [].forEach.call(w.querySelectorAll('[class*="-scroll"]'), function (sc) { sc.style.touchAction = 'pan-y'; });
     function onBar(e) {
-      if (e.target.closest('a,button,input,textarea,select,[class*="-tab"],[class*="-content"],.close-menu')) return false;
-      if (e.target.closest('.info-text-div,.info-text')) return true;
-      return e.clientY - w.getBoundingClientRect().top < 30;
+      if (e.target.closest('a,button,input,textarea,select,.close-menu,.info-tab,[class*="-tab "],[class$="-tab"]')) return false;
+      var sc = e.target.closest('[class*="-scroll"]');
+      if (sc && e.clientX > sc.getBoundingClientRect().left + sc.clientWidth) return false;
+      return true;
     }
     w.addEventListener('pointerdown', function (e) {
       if (e.button !== 0 || !onBar(e)) return;
@@ -810,7 +812,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.2.1/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.2.2/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
