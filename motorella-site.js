@@ -192,6 +192,7 @@
     '.mhome-model.is-loaded .mhome-stage{opacity:1;filter:blur(0);transform:none}',
     '.mhome-model .mhome-over{justify-content:flex-end;padding-bottom:13vh;box-sizing:border-box}',
     '.mhome-video .mhome-over{justify-content:center}',
+    '.mhome-video.is-btn-low .mhome-over{justify-content:flex-end;padding-bottom:min(13vh,7vw);box-sizing:border-box}',
     // the film is 16:9 and its action runs to the very top and bottom of the frame, so on wide screens the panel takes
     // the film's own shape and nothing is cropped; on phones it fills the screen and is cropped at the sides instead
     '.mhome-panel.mhome-video{background:#e9e9ea;height:56.25vw;min-height:0}',
@@ -801,11 +802,12 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.1.1/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.2.0/';
   })();
-  // After the room: the cap in 3D, then the airbag film. Nothing else.
+  // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
-    { kind: 'model', src: 'https://d8j0ntlcm91z4.cloudfront.net/user_37rM5MKDTigahhjI4yQJMOQzK2I/hf_20261031_062113_e249cc94-1885-40c1-8296-07b2b5b50a87.glb', alt: 'motorella cap', button: 'View now', href: P.shop },
+    // the chair film (he sits, a quilted pillow comes out of the zipper): its button sits low, clear of the chair
+    { kind: 'video', src: MEDIA + 'motorella-chair.mp4', poster: MEDIA + 'motorella-chair-poster.jpg', button: 'View now', href: P.shop, place: 'bottom' },
     { kind: 'video', src: MEDIA + 'motorella-airbag.mp4', poster: MEDIA + 'motorella-airbag-poster.jpg', button: 'View now', href: P.shop }
   ];
   // A 3D piece on white: turns by itself, can be dragged round, and goes back to turning a moment after it is let go.
@@ -939,7 +941,7 @@
   }
   // A short film that loops without sound, playing only while it is on screen.
   function videoPanel(main, p) {
-    var s = el('section', 'mhome-panel mhome-video', main);
+    var s = el('section', 'mhome-panel mhome-video' + (p.place === 'bottom' ? ' is-btn-low' : ''), main);
     s.setAttribute('data-theme', p.theme || 'light');
     s.setAttribute('data-mh-theme', p.theme || 'light');
     var v = el('video', '', s);
