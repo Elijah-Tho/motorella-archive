@@ -198,6 +198,14 @@
     '.mhome-panel.mhome-video{background:#e9e9ea;height:56.25vw;min-height:0}',
     '.mhome-video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%}',
     '@media (max-width:' + NARROW + 'px){.mhome-panel.mhome-video{height:100vh;height:100svh;min-height:520px}}',
+    // ambient panels: the film at about three quarters, centred, over a soft blurred spill of itself
+    // (one screen tall; the film is as big as fits in about three quarters of it either way)
+    '.mhome-panel.mhome-video.is-ambient{background:#dcdcdd;height:100vh;height:100svh;min-height:520px;--mh-fw:min(76vw,calc(74vh * 16 / 9));--mh-fw:min(76vw,calc(74svh * 16 / 9))}',
+    '.mhome-video .mhome-amb{position:absolute;left:-8%;top:-8%;width:116%;height:116%;object-fit:cover;filter:blur(38px) saturate(1.05);opacity:.95;pointer-events:none}',
+    '.mhome-video .mhome-frame{position:absolute;left:50%;top:50%;width:var(--mh-fw);aspect-ratio:16/9;transform:translate(-50%,-50%);overflow:hidden}',
+    '@media (max-width:' + NARROW + 'px){',
+    '  .mhome-panel.mhome-video.is-ambient{--mh-fw:calc(100vw - 32px)}',
+    '}',
     '@media (max-width:' + NARROW + 'px){html.mh-home body{background-image:none!important}.mhome-panel.mhome-hero{background:var(--mh-room) 69% 50%/cover no-repeat}}',
     '.mhome-wordmark{position:absolute;left:var(--mh-pad,40px);top:calc(var(--mh-row) + 54px);width:min(300px,52vw);height:auto;z-index:2}',
     '.mhome-over{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center;pointer-events:none}',
@@ -802,12 +810,12 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.2.0/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.2.1/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
-    // the chair film (he sits, a quilted pillow comes out of the zipper): its button sits low, clear of the chair
-    { kind: 'video', src: MEDIA + 'motorella-chair.mp4', poster: MEDIA + 'motorella-chair-poster.jpg', button: 'View now', href: P.shop, place: 'bottom' },
+    // the chair film (he sits, a quilted pillow comes out of the zipper), smaller, over a blurred spill of itself
+    { kind: 'video', src: MEDIA + 'motorella-chair.mp4', poster: MEDIA + 'motorella-chair-poster.jpg', button: 'View now', href: P.shop, ambient: true },
     { kind: 'video', src: MEDIA + 'motorella-airbag.mp4', poster: MEDIA + 'motorella-airbag-poster.jpg', button: 'View now', href: P.shop }
   ];
   // A 3D piece on white: turns by itself, can be dragged round, and goes back to turning a moment after it is let go.
@@ -941,13 +949,31 @@
   }
   // A short film that loops without sound, playing only while it is on screen.
   function videoPanel(main, p) {
-    var s = el('section', 'mhome-panel mhome-video' + (p.place === 'bottom' ? ' is-btn-low' : ''), main);
+    var s = el('section', 'mhome-panel mhome-video' + (p.place === 'bottom' ? ' is-btn-low' : '') + (p.ambient ? ' is-ambient' : ''), main);
     s.setAttribute('data-theme', p.theme || 'light');
     s.setAttribute('data-mh-theme', p.theme || 'light');
-    var v = el('video', '', s);
+    // ambient: the film sits smaller in the middle, and a tiny copy of each frame, stretched and blurred, fills the
+    // space around it so the picture seems to run on past its edges (drawn from the playing film, so always in step)
+    var amb = p.ambient ? el('canvas', 'mhome-amb', s) : null;
+    var v = el('video', '', p.ambient ? el('div', 'mhome-frame', s) : s);
     v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'none';
     v.setAttribute('muted', ''); v.setAttribute('playsinline', '');
     if (p.poster) v.poster = p.poster;
+    if (amb) {
+      amb.width = 64; amb.height = 36;
+      var cx = amb.getContext('2d');
+      var paint = function (src) { try { cx.drawImage(src, 0, 0, 64, 36); } catch (err) {} };
+      if (p.poster) { var pi = new Image(); pi.onload = function () { if (v.readyState < 2) paint(pi); }; pi.src = p.poster; }
+      var frame = function () { if (v.readyState >= 2) paint(v); };
+      v.addEventListener('loadeddata', frame);
+      v.addEventListener('seeked', frame);
+      if (v.requestVideoFrameCallback) {
+        var each = function () { frame(); v.requestVideoFrameCallback(each); };
+        v.requestVideoFrameCallback(each);
+      } else {
+        (function tick() { if (!v.paused) frame(); requestAnimationFrame(tick); })();
+      }
+    }
     overlay(s, p);
     whenNear(s, function () { v.src = p.src; v.preload = 'auto'; });
     if ('IntersectionObserver' in window) {
