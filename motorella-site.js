@@ -190,7 +190,8 @@
     '.mhome-model .mhome-stage canvas{display:block;width:100%!important;height:100%!important;outline:none;cursor:grab}',
     '.mhome-model .mhome-stage canvas:active{cursor:grabbing}',
     '.mhome-model.is-loaded .mhome-stage{opacity:1;filter:blur(0);transform:none}',
-    '.mhome-model .mhome-over,.mhome-video .mhome-over{justify-content:flex-end;padding-bottom:13vh;box-sizing:border-box}',
+    '.mhome-model .mhome-over{justify-content:flex-end;padding-bottom:13vh;box-sizing:border-box}',
+    '.mhome-video .mhome-over{justify-content:center}',
     // the film is 16:9 and its action runs to the very top and bottom of the frame, so on wide screens the panel takes
     // the film's own shape and nothing is cropped; on phones it fills the screen and is cropped at the sides instead
     '.mhome-panel.mhome-video{background:#e9e9ea;height:56.25vw;min-height:0}',
@@ -379,8 +380,9 @@
     probe.onload = function () { if (probe.naturalHeight) mark.style.width = Math.round(26 * probe.naturalWidth / probe.naturalHeight) + 'px'; };
     probe.src = src;
     h.style.setProperty('--mh-plus', 'url("' + PLUS + '")');
-    // default look: very slightly darker glass, soft dark grey words Set MOTORELLA_HEADER = 'dark' for the darker glass with light words.
-    var look = window.MOTORELLA_HEADER || 'soft-dark';
+    // default look (A): the darker glass, with light words that follow the page underneath until it shows.
+    // Set MOTORELLA_HEADER = 'soft-dark' for the faint glass with soft dark grey words instead.
+    var look = window.MOTORELLA_HEADER || 'dark';
     if (look === 'soft' || look === 'soft-dark') h.classList.add('is-soft');
     if (look === 'soft-dark') h.classList.add('is-soft-dark');
 
@@ -789,13 +791,12 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.1.0/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.1.1/';
   })();
   // After the room: the cap in 3D, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
     { kind: 'model', src: 'https://d8j0ntlcm91z4.cloudfront.net/user_37rM5MKDTigahhjI4yQJMOQzK2I/hf_20261031_062113_e249cc94-1885-40c1-8296-07b2b5b50a87.glb', alt: 'motorella cap', button: 'View now', href: P.shop },
-    // no button on the film: anywhere it sits, it covers the fall or the airbag
-    { kind: 'video', src: MEDIA + 'motorella-airbag.mp4', poster: MEDIA + 'motorella-airbag-poster.jpg', button: false }
+    { kind: 'video', src: MEDIA + 'motorella-airbag.mp4', poster: MEDIA + 'motorella-airbag-poster.jpg', button: 'View now', href: P.shop }
   ];
   // A 3D piece on white: turns by itself, can be dragged round, and goes back to turning a moment after it is let go.
   // Drawn with three.js, loaded only when the panel is about to come into view. A brushed metal clasp engraved with
