@@ -156,7 +156,8 @@
     '@media (prefers-reduced-motion:reduce){.mh *,.mh{transition:none!important}}',
     // the information window, wherever it is opened
     '.info-window{z-index:1100!important}',
-    '.info-window .info-text-div,.info-window .info-bg{cursor:move}',
+    // it drags from anywhere, with the normal arrow (the page's own styles give the title a move cursor: undo that)
+    '.info-window .info-text-div,.info-window .info-text,.info-window .info-bg{cursor:default!important}',
     // pages: keep their own labels clear of the header
     'html.mh-on .sidebar{top:calc(var(--mh-row) + 34px)!important}',
     // shop
@@ -812,7 +813,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.2.2/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.2.3/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
