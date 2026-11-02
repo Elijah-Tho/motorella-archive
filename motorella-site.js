@@ -229,6 +229,7 @@
     '#product-view [data-product-view-add]{min-width:170px;height:44px;padding:0 26px!important;box-sizing:border-box;border:0!important;border-radius:0!important;',
     '  box-shadow:none!important;background:rgba(24,24,28,.42)!important;-webkit-backdrop-filter:blur(14px) saturate(1.4)!important;backdrop-filter:blur(14px) saturate(1.4)!important;',
     '  transition:background-color .3s ease;cursor:pointer}',
+    '#product-view [data-product-view-add],#product-view [data-product-view-add]:hover,#product-view [data-product-view-add]:active{transform:none!important}',
     '#product-view [data-product-view-add]:hover,#product-view [data-product-view-add]:active{background:rgba(14,14,17,.68)!important}',
     '#product-view .pv-add-text{font-size:10px!important;line-height:1!important;font-weight:700!important;letter-spacing:.18em!important;text-transform:uppercase;color:#fff!important;text-shadow:none!important;margin-right:-.18em}',
     // the sizes in the same look: smaller squares of the same dark glass; the chosen one is a little darker
@@ -1315,7 +1316,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.3.1/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.3.2/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
