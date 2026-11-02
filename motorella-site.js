@@ -279,6 +279,8 @@
     '.mh-note.is-in{transform:none}',
     '.mh-note:not(.is-in){pointer-events:none}',
     '.mh-note.is-dragging{transition:none}',
+    '.mh-note.is-still{transition:none}',
+    'body:has(#motorella-cart.is-open) .mh-note,body:has(.mh.is-menu) .mh-note{opacity:0!important;pointer-events:none!important}',
     // the icon: an off-black tile with the m cut out of it, so the glass shows through the mark
     '.mh-note-icon{flex:none;width:38px;height:38px;border-radius:9px;background:#2b2b2e;',
     '  -webkit-mask:var(--mh-logo) center/62% auto no-repeat,linear-gradient(#000,#000);-webkit-mask-composite:xor;',
@@ -603,7 +605,8 @@
     onScroll();
     setTimeout(onScroll, 400);
     // pages that lay themselves out around the old header (the chairs) measure again now it has gone
-    setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 50);
+    // (not on the looks page: there a resize lays the ring out again without its blur-and-fade entrance)
+    if (!IS.looks) setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 50);
   }
 
   function buildItem(parent, it, i, inSheet) {
@@ -1312,7 +1315,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.3.0/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.3.1/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
@@ -1601,13 +1604,14 @@
   // ------------------------------------------------------------------------------------------------ start
   // ------------------------------------------------------------------------------------------------ the cart reminder
   // The first time someone leaves the shop, a notification drops in 30 to 60 seconds later, in the manner of a
-  // phone's: the m mark, "motorella" where the sender goes, and a line about the cart. After that it comes back every
-  // three to five minutes while they are away from the shop (never on the shop itself). Someone who hasn't opened
-  // the shop yet is counted from the first page they land on. The clock runs across pages; a visit more than half an
-  // hour after the last starts afresh. Pressing it opens the cart (or goes to the shop when the cart is empty);
-  // swiping it up puts it away, and it leaves by itself after a few seconds. On wide screens it is smaller and sits
-  // under the cart. window.MotorellaNudge() shows it straight away, for trying it out.
-  var NUDGE = { key: 'mh_nudge', first: [30, 60], again: [180, 300], stale: 30 * 60 * 1000, stay: 7000 };
+  // phone's: the m mark, "motorella" where the sender goes, and a line about the cart. It stays until it is pressed or
+  // swiped away, page after page (the shop included); it only steps aside while the cart or the menu is open. Once
+  // dealt with, the next one comes three to five minutes later, while they are away from the shop. Someone who hasn't
+  // opened the shop yet is counted from the first page they land on; a visit more than half an hour after the last
+  // starts the clock afresh (a notification still waiting stays). Pressing it opens the cart (or goes to the shop when
+  // the cart is empty); swiping it up puts it away. On wide screens it is smaller and sits under the cart.
+  // window.MotorellaNudge() shows it straight away, for trying it out.
+  var NUDGE = { key: 'mh_nudge', first: [30, 60], again: [180, 300], stale: 30 * 60 * 1000 };
   var NUDGE_FULL = 'Would you like to checkout the items in your cart?';
   var NUDGE_EMPTY = 'Your cart is currently empty, would you like to add to it?';
   function nudgeState() { try { return JSON.parse(localStorage.getItem(NUDGE.key) || 'null') || {}; } catch (e) { return {}; } }
@@ -1616,7 +1620,7 @@
   // note this page; on any page but the shop, returns how long until the next reminder is due (ms)
   function nudgePlan() {
     var now = Date.now(), st = nudgeState();
-    if (!st.seen || now - st.seen > NUDGE.stale) st = {};
+    if (!st.seen || now - st.seen > NUDGE.stale) st = { pending: st.pending || 0 };
     if (IS.shop) { st.shop = true; st.seen = now; nudgeSave(st); return -1; }
     // just left the shop, or arrived somewhere else first: the first one 30-60 s from now; later ones keep their
     // 3-5 minute spacing but never come sooner than 30 s after leaving the shop
@@ -1632,15 +1636,23 @@
   function nudgeLater(wait) {
     setTimeout(function () {
       var st = nudgeState(), now = Date.now();
-      if (st.next && st.next - now > 1000) return nudgeLater(st.next - now); // (another tab showed one meanwhile)
-      nudgeSoon(function () {
-        var s2 = nudgeState(), t = Date.now();
-        s2.next = t + between(NUDGE.again);
-        s2.seen = t;
-        nudgeSave(s2);
-        nudgeLater(s2.next - t);
-      });
+      if (st.pending) return; // (one is already up, here or in another tab)
+      if (st.next && st.next - now > 1000) return nudgeLater(st.next - now);
+      nudgeSoon();
     }, Math.max(2200, wait));
+  }
+  // pressed or swiped away: the next one three to five minutes on
+  function nudgeDone() {
+    var st = nudgeState(), t = Date.now();
+    st.pending = 0;
+    st.next = t + between(NUDGE.again);
+    st.seen = t;
+    nudgeSave(st);
+    if (!IS.shop) nudgeLater(st.next - t);
+  }
+  function ago(t) {
+    var m = Math.floor((Date.now() - t) / 60000);
+    return m < 1 ? 'now' : m < 60 ? m + 'm ago' : Math.floor(m / 60) + 'h ago';
   }
   // the phone's own typeface where there is one (Apple); Inter, its closest open relative, everywhere else
   function nudgeFont() {
@@ -1651,9 +1663,13 @@
     l.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap';
     document.head.appendChild(l);
   }
-  function nudge() {
+  // still: it was already up on the page before, so it is simply there, without dropping in again
+  function nudge(still) {
     if (document.querySelector('.mh-note')) return;
     nudgeFont();
+    var st = nudgeState();
+    if (!st.pending) { st.pending = Date.now(); nudgeSave(st); }
+    var since = st.pending;
     var n = el('div', 'mh-note', document.body);
     n.setAttribute('role', 'status');
     n.setAttribute('tabindex', '0');
@@ -1662,7 +1678,8 @@
     var body = el('div', 'mh-note-body', n);
     var head = el('div', 'mh-note-head', body);
     el('b', '', head, 'motorella');
-    el('span', '', head, 'now');
+    var stamp = el('span', '', head, ago(since));
+    var clock = setInterval(function () { stamp.textContent = ago(since); }, 30000);
     el('div', 'mh-note-msg', body, readCart().length ? NUDGE_FULL : NUDGE_EMPTY);
 
     // wide screens: as wide as the cart button and the little cart together, just under them
@@ -1679,21 +1696,21 @@
     place();
     window.addEventListener('resize', place);
 
-    var timer = 0, gone = false, y0 = null, dy = 0, t0 = 0, moved = false;
-    function arm(ms) { clearTimeout(timer); timer = setTimeout(away, ms); }
+    var gone = false, y0 = null, dy = 0, t0 = 0, moved = false;
+    // dealt with: it goes up and away, and the next one is set
     function away() {
       if (gone) return;
       gone = true;
-      clearTimeout(timer);
+      clearInterval(clock);
       n.classList.remove('is-dragging');
       n.style.transform = '';
       n.classList.remove('is-in');
-      document.removeEventListener('click', other, true);
+      nudgeDone();
       setTimeout(function () { n.remove(); window.removeEventListener('resize', place); }, 650);
     }
     function go() {
       away();
-      if (!readCart().length) { location.href = P.shop; return; }
+      if (!readCart().length) { if (!IS.shop) location.href = P.shop; return; }
       setTimeout(function () {
         var t = [].filter.call(document.querySelectorAll('[data-cart-toggle]'), function (x) { return x.offsetParent !== null; })[0];
         if (t) t.click(); else location.href = P.shop + '?cart=open';
@@ -1705,7 +1722,6 @@
       y0 = e.clientY; dy = 0; t0 = Date.now(); moved = false;
       try { n.setPointerCapture(e.pointerId); } catch (err) {}
       n.classList.add('is-dragging');
-      clearTimeout(timer);
     });
     n.addEventListener('pointermove', function (e) {
       if (y0 == null) return;
@@ -1719,7 +1735,6 @@
       n.classList.remove('is-dragging');
       if (dy < -32 || (dy < -14 && Date.now() - t0 < 220)) return away();
       n.style.transform = '';
-      arm(NUDGE.stay);
     }
     n.addEventListener('pointerup', up);
     n.addEventListener('pointercancel', up);
@@ -1729,20 +1744,17 @@
       if (!moved && !gone) go();
     });
     n.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
-    n.addEventListener('mouseenter', function () { clearTimeout(timer); });
-    n.addEventListener('mouseleave', function () { if (!gone && y0 == null) arm(3000); });
-    // opening the cart by hand puts it away (on wide screens the cart opens just where it sits)
-    function other(e) { if (!n.contains(e.target) && e.target.closest && e.target.closest('[data-cart-toggle]')) away(); }
-    document.addEventListener('click', other, true);
 
-    n.getBoundingClientRect();
-    requestAnimationFrame(function () { requestAnimationFrame(function () { n.classList.add('is-in'); }); });
-    arm(NUDGE.stay);
+    if (still) {
+      n.classList.add('is-still', 'is-in');
+      requestAnimationFrame(function () { requestAnimationFrame(function () { n.classList.remove('is-still'); }); });
+    } else {
+      n.getBoundingClientRect();
+      requestAnimationFrame(function () { requestAnimationFrame(function () { n.classList.add('is-in'); }); });
+    }
   }
-  // wait for a quiet moment: not while a menu or the cart is open, or the page is out of sight
-  // wait for a quiet moment: not while the page is out of sight, or a menu, the cart or a product is open; then show
-  // it and say so (done), so the next one can be set
-  function nudgeSoon(done) {
+  // wait for a quiet moment to drop it in: not while the page is out of sight, or a menu, the cart or a product is open
+  function nudgeSoon() {
     nudgeFont();
     (function wait() {
       if (document.hidden) {
@@ -1753,8 +1765,7 @@
         });
       }
       if (document.querySelector('.mh.is-menu,.mh.is-open,#motorella-cart.is-open,#product-view.is-open,.mh-note')) return setTimeout(wait, 1500);
-      nudge();
-      if (done) done();
+      if (!nudgeState().pending) nudge();
     })();
   }
   window.MotorellaNudge = function () { nudge(); };
@@ -1764,8 +1775,10 @@
     buildHeader();
     if (IS.shop) shop();
     if (IS.looks) looksOrbit();
+    // the reminder: one still waiting is put straight back; otherwise the next is set
     var due = nudgePlan();
-    if (due >= 0) nudgeLater(due);
+    if (nudgeState().pending) nudge(true);
+    else if (due >= 0) nudgeLater(due);
     // the information window: wire it now on the home page, borrow it later elsewhere
     if (document.querySelector('.info-window')) getInfo();
   }
