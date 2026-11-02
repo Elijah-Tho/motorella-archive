@@ -56,7 +56,8 @@
   var IS = {
     home: path === P.home || path === '/' || !!document.querySelector('[data-mtla-home]'),
     shop: path === P.shop || !!document.querySelector('.product-grid'),
-    arch: path.indexOf(P.archive) === 0 || path === P.ntf || !!document.querySelector('[data-mtla-archive],[data-mtla-chairs]')
+    arch: path.indexOf(P.archive) === 0 || path === P.ntf || !!document.querySelector('[data-mtla-archive],[data-mtla-chairs]'),
+    looks: path === P.looks || !!document.querySelector('.lk-row')
   };
   var NARROW = 760; // px: below this the header is a MENU button
 
@@ -152,7 +153,7 @@
     '@media (min-width:' + (NARROW + 1) + 'px){.mh-sheet{display:none}}',
     // phones: the shop's sticky collection label sits under the header and the products start below it
     '@media (max-width:' + NARROW + 'px){html.mh-on.mh-arch .sidebar{top:12px!important}html.mh-on .mtla-archive .mtla-info-btn{margin-top:calc(var(--mh-row) - 4px)}}',
-    '@media (max-width:' + NARROW + 'px){html.mh-on.mh-shop .shop-body{padding-top:calc(var(--mh-row) + 22px)!important}html.mh-on.mh-shop .sidebar{top:var(--mh-row)!important}}',
+    '@media (max-width:' + NARROW + 'px){html.mh-on.mh-shop .shop-body{padding-top:calc(var(--mh-row) + 22px)!important}html.mh-on.mh-shop .sidebar{position:static!important;top:auto!important}}',
     '@media (prefers-reduced-motion:reduce){.mh *,.mh{transition:none!important}}',
     // the information window, wherever it is opened
     '.info-window{z-index:1100!important}',
@@ -165,6 +166,137 @@
     'html.mh-shop .sidebar-label{padding-left:0!important;margin-left:0!important;margin-bottom:0!important}',
     'html.mh-shop .products-count-row{margin-top:10px!important}',
     'html.mh-shop .mtla-toggle-bar{margin-top:8px!important}',
+    // the little plus only lives in the main cart now: not after the mini cart's pictures, not beside product names
+    '.mini-cart-plus,.data-size-toggle,.pv-title-icon{display:none!important}',
+    // the main cart opens clear of the header bar
+    '#motorella-cart{top:calc(var(--mh-row) + 14px)!important}',
+    // the fabric filter's lit states: a grey, then lighter, then white (they were blue, green and pink)
+    '.mtla-dot[data-mtla-state="blue"] .mtla-dot-ring{border-color:#8e8e93!important;box-shadow:0 0 4px 0 rgba(142,142,147,.8),inset 0 0 1.3px 0 rgba(255,255,255,.65)!important}',
+    '.mtla-dot[data-mtla-state="pink"] .mtla-dot-ring{border-color:#fff!important;box-shadow:0 0 4px 0 rgba(255,255,255,.95),0 0 1px 0 rgba(0,0,0,.28),inset 0 0 1.3px 0 rgba(255,255,255,.65)!important}',
+    '.mtla-dot[data-mtla-state="green"] .mtla-dot-ring{border-color:#cfcfd2!important;box-shadow:0 0 4px 0 rgba(207,207,210,.85),inset 0 0 1.3px 0 rgba(255,255,255,.65)!important}',
+    // quick add: the sizes sit under the product, centred, each easy to hit
+    'html.mh-shop .product-sizes{justify-content:center;flex-wrap:wrap;gap:0 2px;padding-top:4px;box-sizing:border-box;width:100%;left:0}',
+    'html.mh-shop .product-sizes .size-option{display:inline-flex;align-items:center;justify-content:center;padding:8px 5px;line-height:1;cursor:pointer}',
+    'html.mh-shop .product-sizes .size-option:hover{text-decoration:underline}',
+    // pointer screens: they show while the pointer is on the product (and stay while it moves down onto them)
+    '@media (hover:hover) and (pointer:fine){html.mh-shop .product-card:hover{z-index:6}html.mh-shop .product-card:hover .product-sizes{display:flex!important;animation:mhszin .18s ease}}',
+    '@keyframes mhszin{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}',
+    // touch screens: the first tap opens them under the product, on one line, in the flow, pushing the next row down
+    'html.mh-shop .product-card.mh-sz .product-sizes{display:flex!important;position:static!important;flex-wrap:nowrap;justify-content:space-between;gap:0;padding:2px 0 0;animation:mhszin .18s ease}',
+    'html.mh-shop .product-card.mh-sz .product-sizes .size-option{flex:0 1 auto;padding:12px 1px;min-height:38px;box-sizing:border-box;white-space:nowrap;letter-spacing:0;font-size:clamp(7px,2.05vw,9px)}',
+    '@media (max-width:' + NARROW + 'px){',
+    // phones: the fabric filter sits at the bottom of the screen, in the middle, twice the size
+    '  html.mh-shop .mtla-toggle-bar{position:fixed!important;left:50%!important;right:auto!important;top:auto!important;bottom:calc(20px + env(safe-area-inset-bottom,0px))!important;margin:0!important;',
+    '    transform:translateX(-50%) scale(2.1);transform-origin:50% 100%;z-index:60;filter:drop-shadow(0 3px 6px rgba(0,0,0,.16))}',
+    '  html.mh-shop .shop-body{padding-bottom:110px!important}',
+    // every row of products sizes to its content (the first two had a fixed height), so open sizes push the next row down
+    '  html.mh-shop .product-grid{grid-template-rows:none!important}',
+    // the product view: the first screen is the product alone (pictures, the title panel, the size chart button); the
+    // other products come after a scroll. Add to cart is a bar fixed to the bottom over everything, and there is enough
+    // room at the end for it to sit below the rail. Its first tap opens the sizes.
+    '  #product-view .pv-other-products{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))!important}',
+    // (the view's background blur moves onto a layer of its own: on the view itself it pins "fixed" children to the
+    // scrolling view instead of the screen, so the bar would ride up with the page)
+    '  #product-view{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}',
+    '  #product-view::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}',
+    // (no band behind the bar: the button floats on its own over the page, so no strip of blur shows between it and the title)
+    '  #product-view .pv-section-secondary{position:fixed!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;z-index:50;margin:0!important;',
+    '    display:flex!important;flex-direction:column;align-items:center;gap:8px;padding:0 16px calc(18px + env(safe-area-inset-bottom,0px))!important;box-sizing:border-box;',
+    '    background:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border:0!important;pointer-events:none}',
+    '  #product-view .pv-section-secondary > div{pointer-events:auto}',
+    '  #product-view [data-product-view-sizes]{display:none!important}',
+    '  #product-view .pv-size-option{height:40px!important}',
+    '  #product-view .pv-size-option.pv-size-circle{width:40px!important;min-width:40px!important}',
+    // tapping Add to cart opens it out into a box (the same glass, a little darker) holding the sizes; the box grows
+    // out of the button and folds back into it (the growing and folding is done in productView)
+    '  #product-view.mh-pick [data-product-view-add]{display:none!important}',
+    '  #product-view.mh-pick [data-product-view-sizes]{display:flex!important;flex-wrap:wrap;justify-content:center;gap:6px!important;',
+    '    width:min(340px,calc(100vw - 32px));box-sizing:border-box;padding:12px;margin:0;',
+    '    background:rgba(14,14,17,.56);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4)}',
+    '  #product-view.mh-pick [data-product-view-sizes]::before{content:"Select size";flex:0 0 100%;text-align:center;padding:2px 0 7px;',
+    '    font:700 9px/1 "Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.7);',
+    '    animation:mhszin .3s ease .1s both}',
+    '  #product-view.mh-pick .pv-size-option{flex:1 1 0;min-width:0;padding:0 4px!important;background:rgba(255,255,255,.15)!important;',
+    '    -webkit-backdrop-filter:none!important;backdrop-filter:none!important;animation:mhszin .3s ease .14s both}',
+    '  #product-view.mh-pick .pv-size-option.pv-size-circle{flex:0 0 40px}',
+    // the colourways sit at the left of the "Select size" line, starting where the first size starts
+    '  #product-view.mh-pick .mh-cw{top:12px;bottom:auto;left:12px;height:11px;gap:16px;animation:mhszin .3s ease .1s both}',
+    '  #product-view.mh-pick .mh-cw-dot{padding:8px 5px;margin:-8px -5px;line-height:11px;height:11px}',
+    '}',
+    // Add to cart in the look of the home page's View now: square dark glass, no edge, small white capitals, darker under the pointer
+    '#product-view .pv-add-glow,#product-view [data-product-view-add]::before,#product-view [data-product-view-add]::after,',
+    '#product-view .pv-size-option::before,#product-view .pv-size-option::after{display:none!important}',
+    '#product-view [data-product-view-add]{min-width:170px;height:44px;padding:0 26px!important;box-sizing:border-box;border:0!important;border-radius:0!important;',
+    '  box-shadow:none!important;background:rgba(24,24,28,.42)!important;-webkit-backdrop-filter:blur(14px) saturate(1.4)!important;backdrop-filter:blur(14px) saturate(1.4)!important;',
+    '  transition:background-color .3s ease;cursor:pointer}',
+    '#product-view [data-product-view-add]:hover,#product-view [data-product-view-add]:active{background:rgba(14,14,17,.68)!important}',
+    '#product-view .pv-add-text{font-size:10px!important;line-height:1!important;font-weight:700!important;letter-spacing:.18em!important;text-transform:uppercase;color:#fff!important;text-shadow:none!important;margin-right:-.18em}',
+    // the sizes in the same look: smaller squares of the same dark glass; the chosen one is a little darker
+    '#product-view [data-product-view-sizes]{gap:8px!important}',
+    '#product-view .pv-size-glow{display:none!important}',
+    '#product-view .pv-size-option{height:36px;padding:0 14px!important;box-sizing:border-box;border:0!important;border-radius:0!important;box-shadow:none!important;transform:none!important;',
+    '  background:rgba(24,24,28,.42)!important;-webkit-backdrop-filter:blur(14px) saturate(1.4)!important;backdrop-filter:blur(14px) saturate(1.4)!important;',
+    '  transition:background-color .3s ease,box-shadow .3s ease}',
+    '#product-view .pv-size-option:hover{background:rgba(14,14,17,.68)!important}',
+    '#product-view .pv-size-option.is-selected{background:rgba(14,14,17,.3)!important;box-shadow:none!important}',
+    '#product-view .pv-size-option.pv-size-circle{width:36px;min-width:36px;padding:0!important}',
+    '#product-view .pv-size-text{font-size:10px!important;line-height:1!important;font-weight:700!important;letter-spacing:.18em!important;text-transform:uppercase;color:#fff!important;text-shadow:none!important;margin-right:-.18em}',
+    '@media (max-width:' + NARROW + 'px){#product-view [data-product-view-add]{min-width:min(240px,calc(100vw - 64px));height:46px}}',
+    // colourways: a + in each colour, as in the shop's colour picker; the one showing is underlined
+    '#product-view [data-product-view-sizes]{position:relative}',
+    '#product-view .mh-cw{position:absolute;left:0;bottom:calc(100% + 12px);display:flex;align-items:center;gap:8px;line-height:1;pointer-events:auto}',
+    '#product-view .mh-cw-dot{display:inline-block;width:12px;height:12px;line-height:12px;text-align:center;font-family:sans-serif;font-weight:700;font-size:14px;',
+    '  cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;transition:opacity .2s ease}',
+    '#product-view .mh-cw-dot.is-active{text-decoration:underline}',
+    '@media (hover:hover){#product-view .mh-cw-dot:hover{opacity:.6}}',
+    // desktop: the same box as on phones (the glass a little darker), always open, holding the colourways, "Select size",
+    // the sizes and Add to cart
+    '@media (min-width:' + (NARROW + 1) + 'px){',
+    '  #product-view .pv-section-secondary{display:flex!important;flex-direction:column;align-items:stretch;gap:6px;width:340px!important;max-width:calc(100vw - 48px);',
+    '    height:auto!important;min-height:0!important;margin:28px auto 0!important;padding:12px!important;box-sizing:border-box;',
+    '    background:rgba(14,14,17,.56);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4)}',
+    '  #product-view [data-product-view-sizes]{display:flex!important;flex-wrap:wrap;justify-content:center;gap:6px!important;width:auto;margin:0!important;padding:0!important}',
+    '  #product-view [data-product-view-sizes]::before{content:"Select size";flex:0 0 100%;text-align:center;padding:2px 0 7px;',
+    '    font:700 9px/1 "Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.7)}',
+    '  #product-view .pv-size-option{flex:1 1 0;min-width:0;padding:0 4px!important;background:rgba(255,255,255,.15)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}',
+    '  #product-view .pv-size-option.pv-size-circle{flex:0 0 36px}',
+    '  #product-view [data-product-view-add]{width:100%;min-width:0;margin:0!important;background:rgba(255,255,255,.22)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}',
+    '  #product-view .mh-cw{top:1px;bottom:auto;left:0;height:11px;gap:16px}',
+    '  #product-view .mh-cw-dot{padding:8px 5px;margin:-8px -5px;line-height:11px;height:11px}',
+    '}',
+    // wide screens: the box moves up beside the picture, on the right of the first screen
+    '@media (min-width:1220px){',
+    '  #product-view .pv-scroll{position:relative}',
+    '  #product-view .pv-section-secondary{position:absolute!important;left:max(82.8%,calc(50% + 450px));top:38.5vh;transform:translate(-50%,-50%);margin:0!important;z-index:5}',
+    '}',
+    // the reminder: a notification in the manner of a phone's, dropping in from the top (phones) or under the cart (wide)
+    '.mh-note{position:fixed;z-index:1200;left:8px;right:8px;top:calc(8px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:11px;',
+    '  padding:11px 14px 12px 11px;box-sizing:border-box;border-radius:22px;border:0;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;',
+    '  background:rgba(246,246,247,.62);-webkit-backdrop-filter:blur(26px) saturate(1.8);backdrop-filter:blur(26px) saturate(1.8);',
+    '  box-shadow:0 10px 34px rgba(0,0,0,.14),0 1px 3px rgba(0,0,0,.05);-webkit-tap-highlight-color:transparent;',
+    '  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",Inter,"Helvetica Neue",Helvetica,Arial,sans-serif;color:#2b2b2e;-webkit-font-smoothing:antialiased;',
+    '  transform:translateY(calc(-100% - 24px));transition:transform .55s cubic-bezier(.16,1,.3,1),opacity .4s ease}',
+    '.mh-note.is-in{transform:none}',
+    '.mh-note:not(.is-in){pointer-events:none}',
+    '.mh-note.is-dragging{transition:none}',
+    // the icon: an off-black tile with the m cut out of it, so the glass shows through the mark
+    '.mh-note-icon{flex:none;width:38px;height:38px;border-radius:9px;background:#2b2b2e;',
+    '  -webkit-mask:var(--mh-logo) center/62% auto no-repeat,linear-gradient(#000,#000);-webkit-mask-composite:xor;',
+    '  mask:var(--mh-logo) center/62% auto no-repeat,linear-gradient(#000,#000);mask-composite:exclude}',
+    '.mh-note-body{flex:1 1 auto;min-width:0}',
+    '.mh-note-head{display:flex;align-items:baseline;gap:8px}',
+    '.mh-note-head b{flex:1 1 auto;font-size:15px;line-height:20px;font-weight:600;letter-spacing:-.01em;text-transform:lowercase;color:#2b2b2e}',
+    '.mh-note-head span{flex:none;font-size:13px;line-height:20px;color:#8a8a8f}',
+    '.mh-note-msg{font-size:15px;line-height:20px;letter-spacing:-.01em;color:#2b2b2e}',
+    '@media (min-width:' + (NARROW + 1) + 'px){',
+    '  .mh-note{left:auto;right:auto;top:0;width:340px;gap:9px;padding:9px 12px 10px 9px;border-radius:15px;opacity:0;transform:translateY(-8px);',
+    '    transition:transform .45s cubic-bezier(.16,1,.3,1),opacity .35s ease}',
+    '  .mh-note.is-in{opacity:1;transform:none}',
+    '  .mh-note-icon{width:30px;height:30px;border-radius:7px}',
+    '  .mh-note-head b{font-size:12.5px;line-height:16px}',
+    '  .mh-note-head span{font-size:11px;line-height:16px}',
+    '  .mh-note-msg{font-size:12.5px;line-height:16px}',
+    '}',
     '.mh-soldout{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:2;box-sizing:content-box;margin:0;padding:4px 7px 3px;font-size:9px;line-height:11px;font-weight:700;',
     '  letter-spacing:.09em;color:#3c3c3c;background:rgba(241,241,241,.88);border:1px solid rgba(60,60,60,.12);border-radius:3px;white-space:nowrap;',
     '  font-family:"Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif;pointer-events:none}',
@@ -206,6 +338,22 @@
     '.mhome-video .mhome-frame{position:absolute;left:50%;top:50%;width:var(--mh-fw);aspect-ratio:16/9;transform:translate(-50%,-50%);overflow:hidden}',
     '@media (max-width:' + NARROW + 'px){',
     '  .mhome-panel.mhome-video.is-ambient{--mh-fw:calc(100vw - 32px)}',
+    '}',
+    // the film is the link: under the pointer it dims and softens and the words come up in its middle; a click goes to
+    // the shop (on a phone the first tap does the dimming, the second goes)
+    '.mhome-hit{overflow:hidden}',
+    '.mhome-hit video{transition:filter .55s ease,transform .9s cubic-bezier(.2,.75,.15,1);will-change:filter}',
+    '.mhome-cover{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;text-decoration:none!important;cursor:pointer;-webkit-tap-highlight-color:transparent}',
+    '.mhome-cover span{font-size:11px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:#fff;text-shadow:0 0 14px rgba(0,0,0,.22);',
+    '  opacity:0;transform:translateY(5px);filter:blur(3px);transition:opacity .45s ease,transform .6s cubic-bezier(.2,.75,.15,1),filter .5s ease}',
+    '.mhome-hit.is-hov video{filter:brightness(.6) blur(5px);transform:scale(1.035)}',
+    '.mhome-hit.is-hov .mhome-cover span{opacity:1;transform:none;filter:blur(0)}',
+    '.mhome-video.is-ambient .mhome-amb{transition:filter .55s ease,opacity .55s ease}',
+    '.mhome-video.is-ambient.is-hov .mhome-amb{filter:blur(38px) saturate(1.05) brightness(.82)}',
+    '@media (hover:hover) and (pointer:fine){',
+    '  .mhome-hit:hover video{filter:brightness(.6) blur(5px);transform:scale(1.035)}',
+    '  .mhome-hit:hover .mhome-cover span{opacity:1;transform:none;filter:blur(0)}',
+    '  .mhome-video.is-ambient:has(.mhome-hit:hover) .mhome-amb{filter:blur(38px) saturate(1.05) brightness(.82)}',
     '}',
     '@media (max-width:' + NARROW + 'px){html.mh-home body{background-image:none!important}.mhome-panel.mhome-hero{background:var(--mh-room) 69% 50%/cover no-repeat}}',
     '.mhome-wordmark{position:absolute;left:var(--mh-pad,40px);top:calc(var(--mh-row) + 54px);width:min(300px,52vw);height:auto;z-index:2}',
@@ -388,6 +536,7 @@
     var src = (old && (old.currentSrc || old.src)) || LOGO;
     var mark = el('span', 'mh-mark', logo);
     mark.style.setProperty('--mh-logo', 'url("' + src + '")');
+    H.logo = src;
     var probe = new Image();
     probe.onload = function () { if (probe.naturalHeight) mark.style.width = Math.round(26 * probe.naturalWidth / probe.naturalHeight) + 'px'; };
     probe.src = src;
@@ -704,6 +853,10 @@
       if (t) t.click();
     });
     soldOut();
+    quickSizes();
+    productView();
+    colorways();
+    whenRail(railScroll);
   }
   function whenReady(fn) {
     var n = 0;
@@ -807,19 +960,365 @@
     mo.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class', 'style'] });
   }
 
+  // ------------------------------------------------------------------------------------------------ shop: quick add
+  // Pointer screens show a product's sizes on hover (CSS). Touch screens: the first tap on a product opens its sizes
+  // under it (closing any other); a second tap goes through to the product as before; a tap elsewhere closes them.
+  var TOUCH = !!window.MOTORELLA_TOUCH || (window.matchMedia && matchMedia('(hover: none)').matches);
+  var PASS = false; // set while this script opens a product itself, so the first-tap rule lets it through
+  function quickSizes() {
+    if (!TOUCH) return;
+    function closeAll(except) {
+      [].forEach.call(document.querySelectorAll('.product-card.mh-sz'), function (c) { if (c !== except) c.classList.remove('mh-sz'); });
+    }
+    document.addEventListener('click', function (e) {
+      if (PASS) return;
+      var card = e.target.closest && e.target.closest('.product-card');
+      if (!card) { if (!e.target.closest || !e.target.closest('#product-view,#motorella-cart')) closeAll(); return; }
+      if (e.target.closest('.product-sizes')) return;
+      if (card.classList.contains('mh-sz')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      closeAll(card);
+      card.classList.add('mh-sz');
+    }, true);
+  }
+
+  // ------------------------------------------------------------------------------------------------ shop: product view
+  // Phones: the add-to-cart bar sits at the bottom of the screen (CSS). Its first tap opens the sizes; tapping a size
+  // picks it and adds it straight away; a tap anywhere else in the view closes the sizes again.
+  function productView() {
+    var bypass = false;
+    // (the box round the sizes is part of the product: a click on its edge must not close the view, as a click on
+    // the empty page around the product does)
+    var sec = document.querySelector('#product-view .pv-section-secondary');
+    if (sec) sec.addEventListener('click', function (e) { if (e.target === sec) e.stopPropagation(); });
+    function narrow() { return window.innerWidth <= NARROW; }
+    function addEl(pv) { var t = pv.querySelector('.pv-add-text'); return t && t.parentElement; }
+    function boxEl(pv) { return pv.querySelector('[data-product-view-sizes]'); }
+    // the box's edges pulled in to where the button is (a clip-path inset), so it can grow out of it and fold back
+    function inset(from, to) {
+      return 'inset(' + [from.top - to.top, to.right - from.right, to.bottom - from.bottom, from.left - to.left]
+        .map(function (n) { return Math.max(0, Math.round(n)) + 'px'; }).join(' ') + ')';
+    }
+    var BTN = 'rgba(24, 24, 28, 0.42)', BOX = 'rgba(14, 14, 17, 0.56)';
+    // drop whatever growing or folding is still on the box and the sizes in it
+    function settle(pv, b) {
+      pv.__mhShut = false;
+      if (!b || !b.getAnimations) return;
+      [b].concat([].slice.call(b.children)).forEach(function (n) { n.getAnimations().forEach(function (a) { a.cancel(); }); });
+    }
+    function open(pv, add) {
+      var from = add.getBoundingClientRect();
+      var b = boxEl(pv);
+      settle(pv, b);
+      pv.__mhFrom = from;
+      pv.classList.add('mh-pick');
+      if (!b || !b.animate) return;
+      b.animate([{ clipPath: inset(from, b.getBoundingClientRect()), backgroundColor: BTN }, { clipPath: 'inset(0px)', backgroundColor: BOX }],
+        { duration: 440, easing: 'cubic-bezier(.2,.75,.15,1)' });
+    }
+    function shut(pv) {
+      if (!pv.classList.contains('mh-pick') || pv.__mhShut) return;
+      var b = boxEl(pv), from = pv.__mhFrom;
+      if (!b || !b.animate || !from) { pv.classList.remove('mh-pick'); return; }
+      pv.__mhShut = true;
+      [].forEach.call(b.children, function (k) { k.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, fill: 'forwards' }); });
+      var done = false;
+      var end = function () {
+        if (done) return;
+        done = true;
+        if (pv.classList.contains('mh-pick')) pv.classList.remove('mh-pick');
+        settle(pv, b);
+      };
+      b.animate([{ clipPath: 'inset(0px)', backgroundColor: BOX }, { clipPath: inset(from, b.getBoundingClientRect()), backgroundColor: BTN }],
+        { duration: 300, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }).onfinish = end;
+      setTimeout(end, 380); // (in case the page is throttled and the animation never reports back)
+    }
+    document.addEventListener('click', function (e) {
+      if (bypass || !narrow() || !e.target.closest) return;
+      var pv = e.target.closest('#product-view');
+      if (!pv) return;
+      var add = addEl(pv);
+      if (add && add.contains(e.target)) {
+        if (!pv.classList.contains('mh-pick')) {
+          e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+          open(pv, add);
+        } else {
+          setTimeout(function () { pv.classList.remove('mh-pick'); }, 400);
+        }
+        return;
+      }
+      if (e.target.closest('.pv-size-option')) {
+        if (!pv.classList.contains('mh-pick')) return;
+        // let the view take the size first, then press add for them
+        setTimeout(function () {
+          var t = pv.querySelector('.pv-add-text');
+          if (t) { bypass = true; try { t.click(); } finally { bypass = false; } }
+          setTimeout(function () { pv.classList.remove('mh-pick'); }, 350);
+        }, 60);
+        return;
+      }
+      if (!e.target.closest('.pv-section-secondary')) shut(pv);
+    }, true);
+    // whenever the view closes or shows another product, start with the sizes closed
+    var pv0 = document.getElementById('product-view');
+    if (pv0 && 'MutationObserver' in window) {
+      // (only touch the class when it is actually there: removing an absent class still rewrites the attribute,
+      // which would wake this observer again, for ever)
+      new MutationObserver(function () {
+        if (!pv0.classList.contains('is-open') && pv0.classList.contains('mh-pick')) pv0.classList.remove('mh-pick');
+      })
+        .observe(pv0, { attributes: true, attributeFilter: ['class'] });
+    }
+  }
+
+  // ------------------------------------------------------------------------------------------------ shop: colourways in the product view
+  // A + in each of the product's colours sits above the sizes (in the box with the sizes on phones), as in the shop's
+  // colour picker. Pressing one shows that colour of the product. The colours of a product are the cards that share
+  // its title; the view rebuilds its sizes each time it shows a product, so the row is put back whenever that happens.
+  var CW_HEX = { grey: '#8a8181', gray: '#8a8181', black: '#242121', blue: '#233feb', red: '#eb2365' };
+  function colorways() {
+    var pv = document.getElementById('product-view');
+    var sizes = pv && pv.querySelector('[data-product-view-sizes]');
+    if (!sizes) return;
+    function norm(s) { return (s || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+    function abs(u) { try { return new URL(u, location.href).href; } catch (e) { return u || ''; } }
+    function titleOf(card) { var t = card.querySelector('.product-title'); return norm((t && t.textContent) || card.getAttribute('data-product-title')); }
+    function colorOf(card) { return norm(card.getAttribute('data-product-color')); }
+    // the card the view is showing: same title, and its picture is the one on the stage
+    function current() {
+      var t = pv.querySelector('.text-block-6'), im = pv.querySelector('.product-view-img');
+      var title = norm(t && t.textContent), src = im ? abs(im.getAttribute('src')) : '';
+      var group = [].filter.call(document.querySelectorAll('.product-card'), function (c) { return titleOf(c) === title; });
+      if (!group.length) return null;
+      var card = group.filter(function (c) {
+        var f = c.getAttribute('data-product-image-flat'), img = c.querySelector('.product-image');
+        return (f && abs(f) === src) || (img && abs(img.getAttribute('src')) === src);
+      })[0];
+      return { group: group, card: card || group[0] };
+    }
+    function colorsOf(group) {
+      var seen = {}, out = [];
+      function add(c) { if (c && !seen[c]) { seen[c] = true; out.push(c); } }
+      [].forEach.call(group[0].querySelectorAll('.mtla-color-dot[data-color]'), function (d) { add(norm(d.getAttribute('data-color'))); });
+      group.forEach(function (c) { add(colorOf(c)); });
+      return out;
+    }
+    function show(card) {
+      PASS = true;
+      try { (card.querySelector('.product-image') || card).click(); } finally { PASS = false; }
+    }
+    function sync() {
+      if (sizes.querySelector('.mh-cw')) return;
+      var cur = current();
+      if (!cur) return;
+      var colors = colorsOf(cur.group);
+      if (colors.length < 2) return;
+      var now = colorOf(cur.card);
+      var row = document.createElement('span');
+      row.className = 'mh-cw';
+      colors.forEach(function (c) {
+        var d = el('span', 'mh-cw-dot' + (c === now ? ' is-active' : ''), row, '+');
+        d.style.color = CW_HEX[c] || c;
+        d.setAttribute('data-color', c);
+        d.setAttribute('role', 'button');
+        d.setAttribute('aria-label', c);
+        d.addEventListener('click', function (e) {
+          e.stopPropagation();
+          if (c === now) return;
+          var cur2 = current();
+          if (!cur2) return;
+          var target = cur2.group.filter(function (x) { return colorOf(x) === c; })[0];
+          if (target) return show(target);
+          // (in the shop's colour-picker view the first card of a product wears the colour picked there, so the other
+          // colour may live only in its picker: pick it there, then show that card)
+          var dot = cur2.group[0].querySelector('.mtla-color-dot[data-color="' + c + '"]');
+          if (dot) { dot.click(); setTimeout(function () { show(cur2.group[0]); }, 230); }
+        });
+      });
+      sizes.insertBefore(row, sizes.firstChild);
+    }
+    if ('MutationObserver' in window) new MutationObserver(sync).observe(sizes, { childList: true });
+    sync();
+  }
+
+  // ------------------------------------------------------------------------------------------------ shop: other products rail
+  // The rail keeps drifting on its own. Point at it (or touch it) and it stops and becomes scrollable: the wheel, a
+  // sideways trackpad swipe or a drag moves it along; let go and it carries on drifting from where it was left.
+  function whenRail(fn) {
+    var n = 0;
+    (function look() {
+      var r = document.querySelector('.pv-rail');
+      if (r && r.querySelector('.pv-rail-track')) return fn(r);
+      if (n++ < 60) setTimeout(look, 500);
+    })();
+  }
+  function railScroll(rail) {
+    if (rail.__mh) return;
+    rail.__mh = true;
+    var track = rail.querySelector('.pv-rail-track');
+    var held = false, dist = 0, dur = 0, resumeT = null, drag = null, moved = 0;
+    function anim() { var a = track.getAnimations ? track.getAnimations() : []; return a[0] || null; }
+    function hold() {
+      clearTimeout(resumeT);
+      var a = anim();
+      if (!a) return false;
+      if (!held) {
+        a.pause();
+        held = true;
+        if (!dist) {
+          // how far one full loop travels, read off the animation itself
+          dur = a.effect.getTiming().duration;
+          var t0 = a.currentTime;
+          a.currentTime = dur / 2;
+          var m = new DOMMatrix(getComputedStyle(track).transform);
+          dist = Math.abs(m.m41) * 2;
+          a.currentTime = t0;
+        }
+      }
+      return !!dist;
+    }
+    function move(px) {
+      var a = anim();
+      if (!a || !dist) return;
+      var t = (a.currentTime + px * dur / dist) % dur;
+      if (t < 0) t += dur;
+      a.currentTime = t;
+    }
+    function release(ms) {
+      clearTimeout(resumeT);
+      resumeT = setTimeout(function () { var a = anim(); if (a) a.play(); held = false; }, ms);
+    }
+    rail.style.touchAction = 'pan-y';
+    rail.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') hold(); });
+    rail.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse' && !drag) release(500); });
+    rail.addEventListener('wheel', function (e) {
+      if (!hold()) return;
+      e.preventDefault();
+      move(Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY);
+    }, { passive: false });
+    rail.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0 || !hold()) return;
+      drag = { x: e.clientX, id: e.pointerId };
+      moved = 0;
+    });
+    window.addEventListener('pointermove', function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var dx = e.clientX - drag.x;
+      drag.x = e.clientX;
+      moved += Math.abs(dx);
+      if (moved > 6) { try { rail.setPointerCapture(e.pointerId); } catch (err) {} }
+      move(-dx);
+    });
+    function up(e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      drag = null;
+      if (e.pointerType !== 'mouse') release(2500);
+      else if (!rail.matches(':hover')) release(500);
+    }
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+    // a drag is not a click on whatever product it ended on
+    rail.addEventListener('click', function (e) { if (moved > 6) { e.preventDefault(); e.stopPropagation(); moved = 0; } }, true);
+    rail.addEventListener('dragstart', function (e) { e.preventDefault(); });
+  }
+
+  // ------------------------------------------------------------------------------------------------ looks: orbit
+  // On phones the looks stand in a circle. The circle slowly turns, and dragging round it turns it by hand (with a little
+  // momentum). Each look is moved with the separate translate property, so nothing the page does with transforms clashes.
+  function looksOrbit() {
+    var n = 0;
+    (function look() {
+      var row = document.querySelector('.lk-row');
+      var items = row ? row.querySelectorAll('.look-item') : [];
+      if (items.length >= 3) return orbit(row, [].slice.call(items));
+      if (n++ < 80) setTimeout(look, 250);
+    })();
+  }
+  function orbit(row, items) {
+    var SPEED = (Math.PI * 2) / 70;     // one turn in about 70 seconds
+    var g = null, theta = 0, vel = 0, last = 0, drag = null, moved = 0;
+    function geometry() {
+      var pts = items.map(function (it) { return { x: it.offsetLeft + it.offsetWidth / 2, y: it.offsetTop + it.offsetHeight / 2 }; });
+      var cx = 0, cy = 0;
+      pts.forEach(function (p) { cx += p.x; cy += p.y; });
+      cx /= pts.length; cy /= pts.length;
+      var rx = 0, ry = 0;
+      pts.forEach(function (p) { rx = Math.max(rx, Math.abs(p.x - cx)); ry = Math.max(ry, Math.abs(p.y - cy)); });
+      // only a ring (spread both ways) turns; the row of looks on wide screens stays as it is
+      if (rx < 40 || ry < 40) return null;
+      return { cx: cx, cy: cy, rx: rx, ry: ry, pts: pts, a: pts.map(function (p) { return Math.atan2((p.y - cy) / ry, (p.x - cx) / rx); }) };
+    }
+    function place() {
+      if (!g) { items.forEach(function (it) { it.style.translate = ''; it.style.zIndex = ''; }); return; }
+      items.forEach(function (it, i) {
+        var a = g.a[i] + theta;
+        var x = g.cx + g.rx * Math.cos(a), y = g.cy + g.ry * Math.sin(a);
+        it.style.translate = Math.round((x - g.pts[i].x) * 10) / 10 + 'px ' + Math.round((y - g.pts[i].y) * 10) / 10 + 'px';
+        it.style.zIndex = String(100 + Math.round(y));
+      });
+    }
+    function refresh() { items.forEach(function (it) { it.style.translate = ''; }); g = geometry(); place(); }
+    refresh();
+    window.addEventListener('resize', function () { setTimeout(refresh, 120); });
+    function frame(t) {
+      var dt = last ? Math.min(0.05, (t - last) / 1000) : 0;
+      last = t;
+      if (g && !drag) {
+        theta += (SPEED + vel) * dt;
+        vel *= Math.pow(0.04, dt);       // momentum fades out in about a second
+        if (Math.abs(vel) < 0.0005) vel = 0;
+        place();
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    function ang(e) { var r = row.getBoundingClientRect(); return Math.atan2((e.clientY - r.top - g.cy) / g.ry, (e.clientX - r.left - g.cx) / g.rx); }
+    row.addEventListener('pointerdown', function (e) {
+      if (!g || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      drag = { id: e.pointerId, a: ang(e), t: performance.now(), x: e.clientX, y: e.clientY };
+      moved = 0;
+      vel = 0;
+    }, true);
+    window.addEventListener('pointermove', function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var a = ang(e), d = a - drag.a;
+      if (d > Math.PI) d -= Math.PI * 2;
+      if (d < -Math.PI) d += Math.PI * 2;
+      var now = performance.now(), dt = Math.max(1, now - drag.t) / 1000;
+      moved += Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y);
+      drag.x = e.clientX; drag.y = e.clientY;
+      theta += d;
+      vel = vel * 0.6 + (d / dt) * 0.4;
+      drag.a = a; drag.t = now;
+      place();
+    });
+    function up(e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      drag = null;
+      vel = Math.max(-4, Math.min(4, vel));
+      last = 0;
+    }
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+    // a turn of the circle is not a tap on the look it ended on
+    row.addEventListener('click', function (e) { if (moved > 10) { e.preventDefault(); e.stopPropagation(); moved = 0; } }, true);
+  }
+
   // ------------------------------------------------------------------------------------------------ home
   // Panels after the room. Each is { kind: 'model' | 'video', src, button, href } or a still picture
   // { image, fit (cover|contain), theme (light|dark), small/title (caption), button, href }.
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.2.3/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.3.0/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
     // the chair film (he sits, a quilted pillow comes out of the zipper), smaller, over a blurred spill of itself
-    { kind: 'video', src: MEDIA + 'motorella-chair.mp4', poster: MEDIA + 'motorella-chair-poster.jpg', button: 'View now', href: P.shop, ambient: true },
-    { kind: 'video', src: MEDIA + 'motorella-airbag.mp4', poster: MEDIA + 'motorella-airbag-poster.jpg', button: 'View now', href: P.shop }
+    { kind: 'video', src: MEDIA + 'motorella-chair.mp4', poster: MEDIA + 'motorella-chair-poster.jpg', label: 'View now', href: P.shop, ambient: true },
+    { kind: 'video', src: MEDIA + 'motorella-airbag.mp4', poster: MEDIA + 'motorella-airbag-poster.jpg', label: 'View now', href: P.shop }
   ];
   // A 3D piece on white: turns by itself, can be dragged round, and goes back to turning a moment after it is let go.
   // Drawn with three.js, loaded only when the panel is about to come into view. A brushed metal clasp engraved with
@@ -950,6 +1449,29 @@
     grp.scale.setScalar(0.85);
     return grp;
   }
+  // The film as a link to the shop. With a mouse, hovering dims it and brings up the words (CSS); on a touch screen the
+  // first tap does that and the second tap follows the link; a tap anywhere else lets it go.
+  function cover(s, box, p) {
+    box.classList.add('mhome-hit');
+    var a = el('a', 'mhome-cover', box);
+    a.href = p.href || P.shop;
+    a.setAttribute('aria-label', (p.label || 'View now') + ' (shop)');
+    el('span', '', a, p.label || 'View now');
+    if (!TOUCH) return;
+    var set = function (on) {
+      box.classList.toggle('is-hov', on);
+      if (box !== s) s.classList.toggle('is-hov', on);
+    };
+    a.addEventListener('click', function (e) {
+      if (box.classList.contains('is-hov')) return;
+      e.preventDefault();
+      [].forEach.call(document.querySelectorAll('.mhome-hit.is-hov,.mhome-video.is-hov'), function (n) { n.classList.remove('is-hov'); });
+      set(true);
+    });
+    document.addEventListener('click', function (e) {
+      if (box.classList.contains('is-hov') && !box.contains(e.target)) set(false);
+    }, true);
+  }
   // A short film that loops without sound, playing only while it is on screen.
   function videoPanel(main, p) {
     var s = el('section', 'mhome-panel mhome-video' + (p.place === 'bottom' ? ' is-btn-low' : '') + (p.ambient ? ' is-ambient' : ''), main);
@@ -958,7 +1480,8 @@
     // ambient: the film sits smaller in the middle, and a tiny copy of each frame, stretched and blurred, fills the
     // space around it so the picture seems to run on past its edges (drawn from the playing film, so always in step)
     var amb = p.ambient ? el('canvas', 'mhome-amb', s) : null;
-    var v = el('video', '', p.ambient ? el('div', 'mhome-frame', s) : s);
+    var box = p.ambient ? el('div', 'mhome-frame', s) : s;
+    var v = el('video', '', box);
     v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'none';
     v.setAttribute('muted', ''); v.setAttribute('playsinline', '');
     if (p.poster) v.poster = p.poster;
@@ -977,7 +1500,10 @@
         (function tick() { if (!v.paused) frame(); requestAnimationFrame(tick); })();
       }
     }
-    overlay(s, p);
+    // p.cover (the default): the film itself is the link, with words that come up over it; cover:false puts the old
+    // glass button back instead
+    if (p.cover === false) overlay(s, p);
+    else cover(s, box, p);
     whenNear(s, function () { v.src = p.src; v.preload = 'auto'; });
     if ('IntersectionObserver' in window) {
       new IntersectionObserver(function (en) {
@@ -1073,10 +1599,173 @@
   }
 
   // ------------------------------------------------------------------------------------------------ start
+  // ------------------------------------------------------------------------------------------------ the cart reminder
+  // The first time someone leaves the shop, a notification drops in 30 to 60 seconds later, in the manner of a
+  // phone's: the m mark, "motorella" where the sender goes, and a line about the cart. After that it comes back every
+  // three to five minutes while they are away from the shop (never on the shop itself). Someone who hasn't opened
+  // the shop yet is counted from the first page they land on. The clock runs across pages; a visit more than half an
+  // hour after the last starts afresh. Pressing it opens the cart (or goes to the shop when the cart is empty);
+  // swiping it up puts it away, and it leaves by itself after a few seconds. On wide screens it is smaller and sits
+  // under the cart. window.MotorellaNudge() shows it straight away, for trying it out.
+  var NUDGE = { key: 'mh_nudge', first: [30, 60], again: [180, 300], stale: 30 * 60 * 1000, stay: 7000 };
+  var NUDGE_FULL = 'Would you like to checkout the items in your cart?';
+  var NUDGE_EMPTY = 'Your cart is currently empty, would you like to add to it?';
+  function nudgeState() { try { return JSON.parse(localStorage.getItem(NUDGE.key) || 'null') || {}; } catch (e) { return {}; } }
+  function nudgeSave(st) { try { localStorage.setItem(NUDGE.key, JSON.stringify(st)); } catch (e) {} }
+  function between(r) { return (r[0] + Math.random() * (r[1] - r[0])) * 1000; }
+  // note this page; on any page but the shop, returns how long until the next reminder is due (ms)
+  function nudgePlan() {
+    var now = Date.now(), st = nudgeState();
+    if (!st.seen || now - st.seen > NUDGE.stale) st = {};
+    if (IS.shop) { st.shop = true; st.seen = now; nudgeSave(st); return -1; }
+    // just left the shop, or arrived somewhere else first: the first one 30-60 s from now; later ones keep their
+    // 3-5 minute spacing but never come sooner than 30 s after leaving the shop
+    if (st.shop || !st.away) {
+      st.away = now;
+      st.next = st.next ? Math.max(st.next, now + NUDGE.first[0] * 1000) : now + between(NUDGE.first);
+    }
+    st.shop = false;
+    st.seen = now;
+    nudgeSave(st);
+    return Math.max(0, st.next - now);
+  }
+  function nudgeLater(wait) {
+    setTimeout(function () {
+      var st = nudgeState(), now = Date.now();
+      if (st.next && st.next - now > 1000) return nudgeLater(st.next - now); // (another tab showed one meanwhile)
+      nudgeSoon(function () {
+        var s2 = nudgeState(), t = Date.now();
+        s2.next = t + between(NUDGE.again);
+        s2.seen = t;
+        nudgeSave(s2);
+        nudgeLater(s2.next - t);
+      });
+    }, Math.max(2200, wait));
+  }
+  // the phone's own typeface where there is one (Apple); Inter, its closest open relative, everywhere else
+  function nudgeFont() {
+    if (/Mac|iPhone|iPad|iPod/.test(navigator.platform || '') || document.getElementById('mh-inter')) return;
+    var l = document.createElement('link');
+    l.id = 'mh-inter';
+    l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap';
+    document.head.appendChild(l);
+  }
+  function nudge() {
+    if (document.querySelector('.mh-note')) return;
+    nudgeFont();
+    var n = el('div', 'mh-note', document.body);
+    n.setAttribute('role', 'status');
+    n.setAttribute('tabindex', '0');
+    var mark = el('div', 'mh-note-icon', n);
+    mark.style.setProperty('--mh-logo', 'url("' + (H.logo || LOGO) + '")');
+    var body = el('div', 'mh-note-body', n);
+    var head = el('div', 'mh-note-head', body);
+    el('b', '', head, 'motorella');
+    el('span', '', head, 'now');
+    el('div', 'mh-note-msg', body, readCart().length ? NUDGE_FULL : NUDGE_EMPTY);
+
+    // wide screens: as wide as the cart button and the little cart together, just under them
+    function place() {
+      if (window.innerWidth <= NARROW) { n.style.left = n.style.top = n.style.width = ''; return; }
+      var hc = [].filter.call(document.querySelectorAll('.header-cart'), function (x) { return x.offsetParent !== null; })[0];
+      var r = hc && hc.getBoundingClientRect();
+      if (!r || !r.width) { n.style.left = (window.innerWidth - 356) + 'px'; n.style.top = '74px'; return; }
+      var w = Math.max(280, r.width);
+      n.style.width = w + 'px';
+      n.style.left = Math.max(8, r.right - w) + 'px';
+      n.style.top = r.bottom + 10 + 'px';
+    }
+    place();
+    window.addEventListener('resize', place);
+
+    var timer = 0, gone = false, y0 = null, dy = 0, t0 = 0, moved = false;
+    function arm(ms) { clearTimeout(timer); timer = setTimeout(away, ms); }
+    function away() {
+      if (gone) return;
+      gone = true;
+      clearTimeout(timer);
+      n.classList.remove('is-dragging');
+      n.style.transform = '';
+      n.classList.remove('is-in');
+      document.removeEventListener('click', other, true);
+      setTimeout(function () { n.remove(); window.removeEventListener('resize', place); }, 650);
+    }
+    function go() {
+      away();
+      if (!readCart().length) { location.href = P.shop; return; }
+      setTimeout(function () {
+        var t = [].filter.call(document.querySelectorAll('[data-cart-toggle]'), function (x) { return x.offsetParent !== null; })[0];
+        if (t) t.click(); else location.href = P.shop + '?cart=open';
+      }, 0);
+    }
+    // up follows the finger; down only gives a little and springs back
+    n.addEventListener('pointerdown', function (e) {
+      if (gone) return;
+      y0 = e.clientY; dy = 0; t0 = Date.now(); moved = false;
+      try { n.setPointerCapture(e.pointerId); } catch (err) {}
+      n.classList.add('is-dragging');
+      clearTimeout(timer);
+    });
+    n.addEventListener('pointermove', function (e) {
+      if (y0 == null) return;
+      dy = e.clientY - y0;
+      if (Math.abs(dy) > 6) moved = true;
+      n.style.transform = 'translateY(' + (dy < 0 ? dy : dy * 0.25) + 'px)';
+    });
+    function up() {
+      if (y0 == null) return;
+      y0 = null;
+      n.classList.remove('is-dragging');
+      if (dy < -32 || (dy < -14 && Date.now() - t0 < 220)) return away();
+      n.style.transform = '';
+      arm(NUDGE.stay);
+    }
+    n.addEventListener('pointerup', up);
+    n.addEventListener('pointercancel', up);
+    n.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!moved && !gone) go();
+    });
+    n.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+    n.addEventListener('mouseenter', function () { clearTimeout(timer); });
+    n.addEventListener('mouseleave', function () { if (!gone && y0 == null) arm(3000); });
+    // opening the cart by hand puts it away (on wide screens the cart opens just where it sits)
+    function other(e) { if (!n.contains(e.target) && e.target.closest && e.target.closest('[data-cart-toggle]')) away(); }
+    document.addEventListener('click', other, true);
+
+    n.getBoundingClientRect();
+    requestAnimationFrame(function () { requestAnimationFrame(function () { n.classList.add('is-in'); }); });
+    arm(NUDGE.stay);
+  }
+  // wait for a quiet moment: not while a menu or the cart is open, or the page is out of sight
+  // wait for a quiet moment: not while the page is out of sight, or a menu, the cart or a product is open; then show
+  // it and say so (done), so the next one can be set
+  function nudgeSoon(done) {
+    nudgeFont();
+    (function wait() {
+      if (document.hidden) {
+        return document.addEventListener('visibilitychange', function again() {
+          if (document.hidden) return;
+          document.removeEventListener('visibilitychange', again);
+          setTimeout(wait, 1200);
+        });
+      }
+      if (document.querySelector('.mh.is-menu,.mh.is-open,#motorella-cart.is-open,#product-view.is-open,.mh-note')) return setTimeout(wait, 1500);
+      nudge();
+      if (done) done();
+    })();
+  }
+  window.MotorellaNudge = function () { nudge(); };
+
   function start() {
     if (IS.home) home();
     buildHeader();
     if (IS.shop) shop();
+    if (IS.looks) looksOrbit();
+    var due = nudgePlan();
+    if (due >= 0) nudgeLater(due);
     // the information window: wire it now on the home page, borrow it later elsewhere
     if (document.querySelector('.info-window')) getInfo();
   }
