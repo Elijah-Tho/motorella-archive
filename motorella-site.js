@@ -199,7 +199,11 @@
     // (the view's background blur moves onto a layer of its own: on the view itself it pins "fixed" children to the
     // scrolling view instead of the screen, so the bar would ride up with the page)
     '  #product-view{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}',
-    '  #product-view::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}',
+    // (the blur is a layer of its own just under the view, outside it, fading in and out with it: inside the fading view
+    // a blur only takes once the view is fully shown, so the page went white first and then blurred all at once)
+    '  .mh-pv-blur{display:block;position:fixed;inset:0;z-index:899;pointer-events:none;opacity:0;transition:opacity .4s ease;',
+    '    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}',
+    '  .mh-pv-blur.is-on{opacity:1}',
     // (no band behind the bar: the button floats on its own over the page, so no strip of blur shows between it and the title)
     '  #product-view .pv-section-secondary{position:fixed!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;z-index:50;margin:0!important;',
     '    display:flex!important;flex-direction:column;align-items:center;gap:8px;padding:0 16px calc(18px + env(safe-area-inset-bottom,0px))!important;box-sizing:border-box;',
@@ -275,6 +279,7 @@
     '  #product-view .mh-pinfo{display:block!important;padding:2px 0 10px;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,.12);color:#fff;font-family:"Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif}',
     '}',
     '#product-view .mh-pinfo{display:none}',
+    '.mh-pv-blur{display:none}',
     // the product heading's words, folds and size chart (in the box on wide screens, in a box of its own on phones)
     '#product-view .mh-ptitle{font-size:13px;line-height:1.3;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff}',
     '#product-view .mh-pprice{margin-top:6px;font-size:10px;line-height:1;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.62)}',
@@ -316,7 +321,12 @@
     '#motorella-cart .cart-item-title{color:rgba(255,255,255,.9)!important}',
     '#motorella-cart .cart-item-price,#motorella-cart .cart-item-remove{color:rgba(255,255,255,.6)!important}',
     '#motorella-cart .cart-decorative-plus img{filter:invert(1);opacity:.6}',
-    '#motorella-cart .mh-checkout{position:absolute;left:16px;right:16px;bottom:16px;height:44px;margin:0;padding:0 16px;border:0;border-radius:0;cursor:pointer;',
+    // (the panel stacks its contents, so Checkout sits at the foot when there is room and comes after the last item
+    // when the cart is long enough to scroll)
+    '#motorella-cart{display:flex!important;flex-direction:column}',
+    '#motorella-cart > *{flex-shrink:0}',
+    '#motorella-cart .cart-decorative-plus{margin-bottom:16px}',
+    '#motorella-cart .mh-checkout{position:static;flex:none;width:100%;margin:auto 0 0;height:44px;padding:0 16px;border:0;border-radius:0;cursor:pointer;',
     '  background:rgba(255,255,255,.18);color:#fff;font:700 10px/1 "Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif;letter-spacing:.18em;text-indent:.18em;text-transform:uppercase;',
     '  transition:background-color .3s ease}',
     '#motorella-cart .mh-checkout:hover,#motorella-cart .mh-checkout:active{background:rgba(14,14,17,.68)}',
@@ -1052,6 +1062,18 @@
     var bypass = false;
     // (the box round the sizes is part of the product: a click on its edge must not close the view, as a click on
     // the empty page around the product does)
+    // phones: the view's background blur, on a layer of its own that fades in and out together with the view (CSS)
+    var pvEl = document.getElementById('product-view');
+    if (pvEl && 'MutationObserver' in window) {
+      var blur = el('div', 'mh-pv-blur');
+      pvEl.parentNode.insertBefore(blur, pvEl);
+      var step = function () {
+        var on = pvEl.classList.contains('is-open');
+        if (blur.classList.contains('is-on') !== on) blur.classList.toggle('is-on', on);
+      };
+      new MutationObserver(step).observe(pvEl, { attributes: true, attributeFilter: ['class'] });
+      step();
+    }
     var sec = document.querySelector('#product-view .pv-section-secondary');
     if (sec) sec.addEventListener('click', function (e) { if (e.target === sec || e.target.closest('.mh-pinfo')) e.stopPropagation(); });
     function narrow() { return window.innerWidth <= NARROW; }
@@ -1385,31 +1407,59 @@
       resumeT = setTimeout(function () { var a = anim(); if (a) a.play(); held = false; }, ms);
     }
     rail.style.touchAction = 'pan-y';
-    rail.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') hold(); });
-    rail.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse' && !drag) release(500); });
+    rail.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') { stopGlide(); hold(); } });
+    rail.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse' && !drag && !glideF) release(500); });
     rail.addEventListener('wheel', function (e) {
       if (!hold()) return;
       e.preventDefault();
       move(Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY);
     }, { passive: false });
+    // a let-go swipe carries on and slows to a stop, as a phone's own scrolling does, before the drift takes over again
+    var glideF = 0;
+    function stopGlide() { if (glideF) { cancelAnimationFrame(glideF); glideF = 0; } }
+    function glide(v, then) {
+      var last = performance.now();
+      (function step(now) {
+        var dt = Math.min(48, now - last);
+        last = now;
+        move(-v * dt);
+        v *= Math.exp(-dt / 325);
+        if (Math.abs(v) > 0.02) glideF = requestAnimationFrame(step);
+        else { glideF = 0; then(); }
+      })(last);
+    }
     rail.addEventListener('pointerdown', function (e) {
       if (e.button !== 0 || !hold()) return;
-      drag = { x: e.clientX, id: e.pointerId };
+      stopGlide();
+      drag = { x: e.clientX, id: e.pointerId, s: [] };
       moved = 0;
     });
     window.addEventListener('pointermove', function (e) {
       if (!drag || e.pointerId !== drag.id) return;
-      var dx = e.clientX - drag.x;
+      var dx = e.clientX - drag.x, now = performance.now();
       drag.x = e.clientX;
+      drag.s.push({ t: now, dx: dx });
+      while (drag.s.length && now - drag.s[0].t > 100) drag.s.shift();
       moved += Math.abs(dx);
       if (moved > 6) { try { rail.setPointerCapture(e.pointerId); } catch (err) {} }
       move(-dx);
     });
     function up(e) {
       if (!drag || e.pointerId !== drag.id) return;
+      var s = drag.s, now = performance.now(), v = 0;
+      // speed over the last tenth of a second (none if the finger had stopped before letting go)
+      if (s.length && now - s[s.length - 1].t < 80) {
+        var sum = 0;
+        s.forEach(function (x) { sum += x.dx; });
+        v = sum / Math.max(16, now - s[0].t);
+      }
       drag = null;
-      if (e.pointerType !== 'mouse') release(2500);
-      else if (!rail.matches(':hover')) release(500);
+      var after = function () {
+        if (e.pointerType !== 'mouse') release(2500);
+        else if (!rail.matches(':hover')) release(500);
+      };
+      if (Math.abs(v) > 0.05) glide(Math.max(-4, Math.min(4, v)), after);
+      else after();
     }
     window.addEventListener('pointerup', up);
     window.addEventListener('pointercancel', up);
@@ -1455,6 +1505,13 @@
     }
     function refresh() { items.forEach(function (it) { it.style.translate = ''; }); g = geometry(); place(); }
     refresh();
+    // (the page may lay the ring out a moment after this runs: until it has, keep looking for it)
+    var tries = 0;
+    (function again() {
+      if (g || tries++ > 60) return;
+      refresh();
+      if (!g) setTimeout(again, 250);
+    })();
     window.addEventListener('resize', function () { setTimeout(refresh, 120); });
     function frame(t) {
       var dt = last ? Math.min(0.05, (t - last) / 1000) : 0;
@@ -1506,7 +1563,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.4.0/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.4.1/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
