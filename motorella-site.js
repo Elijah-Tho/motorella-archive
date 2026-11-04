@@ -279,7 +279,7 @@
     '  #product-view .mh-pinfo{display:block!important;padding:2px 0 10px;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,.12);color:#fff;font-family:"Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif}',
     '}',
     '#product-view .mh-pinfo{display:none}',
-    '.mh-pv-blur{display:none}',
+    '@media (min-width:' + (NARROW + 1) + 'px){.mh-pv-blur{display:none!important}}',
     // the product heading's words, folds and size chart (in the box on wide screens, in a box of its own on phones)
     '#product-view .mh-ptitle{font-size:13px;line-height:1.3;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff}',
     '#product-view .mh-pprice{margin-top:6px;font-size:10px;line-height:1;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.62)}',
@@ -1504,6 +1504,39 @@
       });
     }
     function refresh() { items.forEach(function (it) { it.style.translate = ''; }); g = geometry(); place(); }
+    // Opening a look (the page lines the looks up and enlarges one): the circle stops, and each look's turn is folded
+    // into its own position first, so the page starts its move from exactly where the look stands. When the looks go
+    // back into the circle, it starts turning again from the page's own circle.
+    var frozen = false, resumeT = 0;
+    function freeze() {
+      if (frozen) return;
+      frozen = true;
+      clearTimeout(resumeT);
+      drag = null;
+      vel = 0;
+      items.forEach(function (it) {
+        var tr = (it.style.translate || '').split(/\s+/), tx = parseFloat(tr[0]) || 0, ty = parseFloat(tr[1]) || 0;
+        if (tx || ty) {
+          it.style.left = (parseFloat(it.style.left) || it.offsetLeft) + tx + 'px';
+          it.style.top = (parseFloat(it.style.top) || it.offsetTop) + ty + 'px';
+        }
+        it.style.translate = '';
+      });
+    }
+    if ('MutationObserver' in window) {
+      new MutationObserver(function () {
+        if (row.classList.contains('is-row-mode')) { freeze(); return; }
+        if (!frozen) return;
+        clearTimeout(resumeT);
+        resumeT = setTimeout(function () {
+          if (row.classList.contains('is-row-mode')) return;
+          frozen = false;
+          theta = 0;
+          vel = 0;
+          refresh();
+        }, 1300);
+      }).observe(row, { attributes: true, attributeFilter: ['class'] });
+    }
     refresh();
     // (the page may lay the ring out a moment after this runs: until it has, keep looking for it)
     var tries = 0;
@@ -1516,7 +1549,7 @@
     function frame(t) {
       var dt = last ? Math.min(0.05, (t - last) / 1000) : 0;
       last = t;
-      if (g && !drag) {
+      if (g && !drag && !frozen) {
         theta += (SPEED + vel) * dt;
         vel *= Math.pow(0.04, dt);       // momentum fades out in about a second
         if (Math.abs(vel) < 0.0005) vel = 0;
@@ -1527,7 +1560,7 @@
     requestAnimationFrame(frame);
     function ang(e) { var r = row.getBoundingClientRect(); return Math.atan2((e.clientY - r.top - g.cy) / g.ry, (e.clientX - r.left - g.cx) / g.rx); }
     row.addEventListener('pointerdown', function (e) {
-      if (!g || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      if (!g || frozen || (e.pointerType === 'mouse' && e.button !== 0)) return;
       drag = { id: e.pointerId, a: ang(e), t: performance.now(), x: e.clientX, y: e.clientY };
       moved = 0;
       vel = 0;
@@ -1554,7 +1587,10 @@
     window.addEventListener('pointerup', up);
     window.addEventListener('pointercancel', up);
     // a turn of the circle is not a tap on the look it ended on
-    row.addEventListener('click', function (e) { if (moved > 10) { e.preventDefault(); e.stopPropagation(); moved = 0; } }, true);
+    row.addEventListener('click', function (e) {
+      if (moved > 10) { e.preventDefault(); e.stopPropagation(); moved = 0; return; }
+      if (g && !frozen && e.target.closest && e.target.closest('.look-item')) freeze();
+    }, true);
   }
 
   // ------------------------------------------------------------------------------------------------ home
@@ -1563,7 +1599,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.4.1/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.4.2/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
