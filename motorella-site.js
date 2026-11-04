@@ -168,6 +168,7 @@
     'html.mh-shop .mtla-toggle-bar{margin-top:8px!important}',
     // the little plus only lives in the main cart now: not after the mini cart's pictures, not beside product names
     '.mini-cart-plus,.data-size-toggle,.pv-title-icon{display:none!important}',
+    '.product-card.is-revealed{will-change:auto}',
     // the main cart opens clear of the header bar
     '#motorella-cart{top:calc(var(--mh-row) + 14px)!important}',
     // the fabric filter's lit states: a grey, then lighter, then white (they were blue, green and pink)
@@ -179,7 +180,7 @@
     'html.mh-shop .product-sizes .size-option{display:inline-flex;align-items:center;justify-content:center;padding:8px 5px;line-height:1;cursor:pointer}',
     'html.mh-shop .product-sizes .size-option:hover{text-decoration:underline}',
     // pointer screens: they show while the pointer is on the product (and stay while it moves down onto them)
-    '@media (hover:hover) and (pointer:fine){html.mh-shop .product-card:hover{z-index:6}html.mh-shop .product-card:hover .product-sizes{display:flex!important;animation:mhszin .18s ease}}',
+    '@media (any-hover:hover){html.mh-shop .product-card:hover{z-index:6}html.mh-shop .product-card:hover .product-sizes{display:flex!important;animation:mhszin .18s ease}}',
     '@keyframes mhszin{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}',
     // touch screens: the first tap opens them under the product, on one line, in the flow, pushing the next row down
     'html.mh-shop .product-card.mh-sz .product-sizes{display:flex!important;position:static!important;flex-wrap:nowrap;justify-content:space-between;gap:0;padding:2px 0 0;animation:mhszin .18s ease}',
@@ -220,8 +221,7 @@
     '    -webkit-backdrop-filter:none!important;backdrop-filter:none!important;animation:mhszin .3s ease .14s both}',
     '  #product-view.mh-pick .pv-size-option.pv-size-circle{flex:0 0 40px}',
     // the colourways sit at the left of the "Select size" line, starting where the first size starts
-    '  #product-view.mh-pick .mh-cw{top:12px;bottom:auto;left:12px;height:11px;gap:16px;animation:mhszin .3s ease .1s both}',
-    '  #product-view.mh-pick .mh-cw-dot{padding:8px 5px;margin:-8px -5px;line-height:11px;height:11px}',
+    '  #product-view.mh-pick .mh-cw{top:12px;bottom:auto;left:8px;height:11px;animation:mhszin .3s ease .1s both}',
     '}',
     // Add to cart in the look of the home page's View now: square dark glass, no edge, small white capitals, darker under the pointer
     '#product-view .pv-add-glow,#product-view [data-product-view-add]::before,#product-view [data-product-view-add]::after,',
@@ -243,13 +243,19 @@
     '#product-view .pv-size-option.pv-size-circle{width:36px;min-width:36px;padding:0!important}',
     '#product-view .pv-size-text{font-size:10px!important;line-height:1!important;font-weight:700!important;letter-spacing:.18em!important;text-transform:uppercase;color:#fff!important;text-shadow:none!important;margin-right:-.18em}',
     '@media (max-width:' + NARROW + 'px){#product-view [data-product-view-add]{min-width:min(240px,calc(100vw - 64px));height:46px}}',
-    // colourways: a + in each colour, as in the shop's colour picker; the one showing is underlined
+    // colourways: a small square in each colour; the one showing is at full strength with a fine light ring round it
+    // (each square sits in an 18px target so it is easy to hit)
     '#product-view [data-product-view-sizes]{position:relative}',
-    '#product-view .mh-cw{position:absolute;left:0;bottom:calc(100% + 12px);display:flex;align-items:center;gap:8px;line-height:1;pointer-events:auto}',
-    '#product-view .mh-cw-dot{display:inline-block;width:12px;height:12px;line-height:12px;text-align:center;font-family:sans-serif;font-weight:700;font-size:14px;',
-    '  cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;transition:opacity .2s ease}',
-    '#product-view .mh-cw-dot.is-active{text-decoration:underline}',
-    '@media (hover:hover){#product-view .mh-cw-dot:hover{opacity:.6}}',
+    '#product-view .mh-cw{position:absolute;left:-4px;bottom:calc(100% + 8px);display:flex;align-items:center;gap:2px;line-height:0;pointer-events:auto}',
+    '#product-view .mh-cw-dot{display:inline-grid;place-items:center;width:18px;height:18px;padding:0;margin:0;font-size:0;line-height:0;text-decoration:none;',
+    '  cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}',
+    '#product-view .mh-cw-dot::before{content:"";width:10px;height:10px;background:currentColor;opacity:.7;outline:1px solid transparent;outline-offset:2px;transition:opacity .2s ease,outline-color .2s ease}',
+    '#product-view .mh-cw-dot.is-active::before{opacity:1;outline-color:rgba(255,255,255,.8)}',
+    '@media (any-hover:hover){#product-view .mh-cw-dot:hover::before{opacity:1}}',
+    // the shop's own colour picker in the same squares (on the light page the ring is dark)
+    'html body .mtla-color-dot{display:inline-grid!important;place-items:center;width:14px!important;height:14px!important;font-size:0!important;line-height:0!important;text-decoration:none!important}',
+    'html body .mtla-color-dot::before{content:"";width:9px;height:9px;background:currentColor;opacity:.6;outline:1px solid transparent;outline-offset:2px;transition:opacity .2s ease,outline-color .2s ease}',
+    'html body .mtla-color-dot.is-active::before{opacity:1;outline-color:rgba(60,60,60,.6)}',
     // desktop: the same box as on phones (the glass a little darker), always open, holding the colourways, "Select size",
     // the sizes and Add to cart
     '@media (min-width:' + (NARROW + 1) + 'px){',
@@ -262,14 +268,58 @@
     '  #product-view .pv-size-option{flex:1 1 0;min-width:0;padding:0 4px!important;background:rgba(255,255,255,.15)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}',
     '  #product-view .pv-size-option.pv-size-circle{flex:0 0 36px}',
     '  #product-view [data-product-view-add]{width:100%;min-width:0;margin:0!important;background:rgba(255,255,255,.22)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}',
-    '  #product-view .mh-cw{top:1px;bottom:auto;left:0;height:11px;gap:16px}',
-    '  #product-view .mh-cw-dot{padding:8px 5px;margin:-8px -5px;line-height:11px;height:11px}',
+    '  #product-view .mh-cw{top:1px;bottom:auto;left:-4px;height:11px}',
+    // the product itself now heads the box: its name, the price, then Description and Size chart, each opening with a
+    // + that turns to an x. (The panel under the picture and its round size-chart button give way to this.)
+    '  #product-view .product-view-panel,#product-view .pv-size-chart-wrap{display:none!important}',
+    '  #product-view .mh-pinfo{display:block!important;padding:2px 0 10px;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,.12);color:#fff;font-family:"Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif}',
+    '}',
+    '#product-view .mh-pinfo{display:none}',
+    // the product heading's words, folds and size chart (in the box on wide screens, in a box of its own on phones)
+    '#product-view .mh-ptitle{font-size:13px;line-height:1.3;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff}',
+    '#product-view .mh-pprice{margin-top:6px;font-size:10px;line-height:1;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.62)}',
+    '#product-view .mh-fold{border-top:1px solid rgba(255,255,255,.12)}',
+    '#product-view .mh-pprice + .mh-fold{margin-top:12px}',
+    '#product-view .mh-fold-head{display:flex;align-items:center;justify-content:space-between;width:100%;padding:11px 0 10px;margin:0;background:none;border:0;border-radius:0;',
+    '  cursor:pointer;color:rgba(255,255,255,.85);font:700 9px/1 "Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif;letter-spacing:.22em;text-transform:uppercase;text-align:left}',
+    '#product-view .mh-x{position:relative;flex:none;width:9px;height:9px;transition:transform .35s cubic-bezier(.2,.75,.15,1)}',
+    '#product-view .mh-x::before,#product-view .mh-x::after{content:"";position:absolute;left:0;top:4px;width:9px;height:1px;background:currentColor}',
+    '#product-view .mh-x::after{transform:rotate(90deg)}',
+    '#product-view .mh-fold.is-open .mh-x{transform:rotate(45deg)}',
+    '#product-view .mh-fold-clip{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s cubic-bezier(.2,.75,.15,1)}',
+    '#product-view .mh-fold.is-open .mh-fold-clip{grid-template-rows:1fr}',
+    '#product-view .mh-fold-body{min-height:0;overflow:hidden}',
+    '#product-view .mh-fold-in{padding:0 0 12px;font-size:10px;line-height:1.6;font-weight:400;letter-spacing:.02em;color:rgba(255,255,255,.72)}',
+    '#product-view .mh-chart{display:grid;font-size:9px;line-height:1.2;letter-spacing:.06em;color:rgba(255,255,255,.72)}',
+    '#product-view .mh-chart div{padding:6px 4px;text-align:center;border-bottom:1px solid rgba(255,255,255,.1);white-space:nowrap}',
+    '#product-view .mh-chart .is-label{text-align:left;padding-left:0;color:rgba(255,255,255,.9);font-weight:700}',
+    '#product-view .mh-chart .is-head{color:#fff;font-weight:700}',
+    '#product-view .mh-chart-note{margin-top:9px;font-size:9px;line-height:1.5;letter-spacing:.04em;color:rgba(255,255,255,.55)}',
+    // phones: the sticky Add to cart and its sizes stay as they are; the panel under the pictures becomes a box of its
+    // own in the same dark glass, with the name, price and the two folds (its round size-chart button goes)
+    '@media (max-width:' + NARROW + 'px){',
+    '  #product-view .product-view-panel{display:none!important}',
+    '  #product-view .mh-pinfo.is-own{display:block!important;position:relative;z-index:2;width:min(340px,calc(100vw - 32px));margin:18px auto 0;padding:14px 12px 2px;box-sizing:border-box;text-align:left;',
+    '    color:#fff;font-family:"Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif;background:rgba(14,14,17,.56);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4)}',
     '}',
     // wide screens: the box moves up beside the picture, on the right of the first screen
     '@media (min-width:1220px){',
     '  #product-view .pv-scroll{position:relative}',
-    '  #product-view .pv-section-secondary{position:absolute!important;left:max(82.8%,calc(50% + 450px));top:38.5vh;transform:translate(-50%,-50%);margin:0!important;z-index:5}',
+    '  #product-view .pv-section-secondary{position:absolute!important;left:max(82.8%,calc(50% + 450px));top:max(84px,17.5vh);transform:translateX(-50%);margin:0!important;z-index:5}',
     '}',
+    // the dropdown cart in the header's look: darker frosted glass, square, no edge; the same items in light words, the
+    // picture frames lighter so they show; the big blurred CART word gives way to a Checkout button at the foot
+    '#motorella-cart{background:rgba(14,14,17,.56)!important;-webkit-backdrop-filter:blur(18px) saturate(1.4)!important;backdrop-filter:blur(18px) saturate(1.4)!important;',
+    '  border:0!important;border-radius:0!important;box-shadow:none!important}',
+    '#motorella-cart .cart-wordmark{display:none!important}',
+    '#motorella-cart .cart-item-image{border-color:rgba(255,255,255,.4)!important}',
+    '#motorella-cart .cart-item-title{color:rgba(255,255,255,.9)!important}',
+    '#motorella-cart .cart-item-price,#motorella-cart .cart-item-remove{color:rgba(255,255,255,.6)!important}',
+    '#motorella-cart .cart-decorative-plus img{filter:invert(1);opacity:.6}',
+    '#motorella-cart .mh-checkout{position:absolute;left:16px;right:16px;bottom:16px;height:44px;margin:0;padding:0 16px;border:0;border-radius:0;cursor:pointer;',
+    '  background:rgba(255,255,255,.18);color:#fff;font:700 10px/1 "Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif;letter-spacing:.18em;text-indent:.18em;text-transform:uppercase;',
+    '  transition:background-color .3s ease}',
+    '#motorella-cart .mh-checkout:hover,#motorella-cart .mh-checkout:active{background:rgba(14,14,17,.68)}',
     // the reminder: a notification in the manner of a phone's, dropping in from the top (phones) or under the cart (wide)
     '.mh-note{position:fixed;z-index:1200;left:8px;right:8px;top:calc(8px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:11px;',
     '  padding:11px 14px 12px 11px;box-sizing:border-box;border-radius:22px;border:0;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;',
@@ -353,7 +403,7 @@
     '.mhome-hit.is-hov .mhome-cover span{opacity:1;transform:none;filter:blur(0)}',
     '.mhome-video.is-ambient .mhome-amb{transition:filter .55s ease,opacity .55s ease}',
     '.mhome-video.is-ambient.is-hov .mhome-amb{filter:blur(38px) saturate(1.05) brightness(.82)}',
-    '@media (hover:hover) and (pointer:fine){',
+    '@media (any-hover:hover){',
     '  .mhome-hit:hover video{filter:brightness(.6) blur(5px);transform:scale(1.035)}',
     '  .mhome-hit:hover .mhome-cover span{opacity:1;transform:none;filter:blur(0)}',
     '  .mhome-video.is-ambient:has(.mhome-hit:hover) .mhome-amb{filter:blur(38px) saturate(1.05) brightness(.82)}',
@@ -860,6 +910,8 @@
     quickSizes();
     productView();
     colorways();
+    productInfo();
+    revealNet();
     whenRail(railScroll);
   }
   function whenReady(fn) {
@@ -967,15 +1019,20 @@
   // ------------------------------------------------------------------------------------------------ shop: quick add
   // Pointer screens show a product's sizes on hover (CSS). Touch screens: the first tap on a product opens its sizes
   // under it (closing any other); a second tap goes through to the product as before; a tap elsewhere closes them.
+  // Which kind of press it was is told by the press itself (a finger, or a mouse or trackpad), not by what the screen
+  // says it can do: some laptops (touch screens among them) call themselves touch devices, and they must still work by
+  // mouse as a computer does. The phone-style first tap applies to finger presses only.
   var TOUCH = !!window.MOTORELLA_TOUCH || (window.matchMedia && matchMedia('(hover: none)').matches);
+  var LAST_PTR = '';
+  document.addEventListener('pointerdown', function (e) { LAST_PTR = e.pointerType || ''; }, true);
+  function byTouch() { return window.MOTORELLA_TOUCH ? true : LAST_PTR ? LAST_PTR === 'touch' : TOUCH; }
   var PASS = false; // set while this script opens a product itself, so the first-tap rule lets it through
   function quickSizes() {
-    if (!TOUCH) return;
     function closeAll(except) {
       [].forEach.call(document.querySelectorAll('.product-card.mh-sz'), function (c) { if (c !== except) c.classList.remove('mh-sz'); });
     }
     document.addEventListener('click', function (e) {
-      if (PASS) return;
+      if (PASS || !byTouch()) return;
       var card = e.target.closest && e.target.closest('.product-card');
       if (!card) { if (!e.target.closest || !e.target.closest('#product-view,#motorella-cart')) closeAll(); return; }
       if (e.target.closest('.product-sizes')) return;
@@ -996,7 +1053,7 @@
     // (the box round the sizes is part of the product: a click on its edge must not close the view, as a click on
     // the empty page around the product does)
     var sec = document.querySelector('#product-view .pv-section-secondary');
-    if (sec) sec.addEventListener('click', function (e) { if (e.target === sec) e.stopPropagation(); });
+    if (sec) sec.addEventListener('click', function (e) { if (e.target === sec || e.target.closest('.mh-pinfo')) e.stopPropagation(); });
     function narrow() { return window.innerWidth <= NARROW; }
     function addEl(pv) { var t = pv.querySelector('.pv-add-text'); return t && t.parentElement; }
     function boxEl(pv) { return pv.querySelector('[data-product-view-sizes]'); }
@@ -1144,6 +1201,139 @@
       sizes.insertBefore(row, sizes.firstChild);
     }
     if ('MutationObserver' in window) new MutationObserver(sync).observe(sizes, { childList: true });
+    sync();
+  }
+
+  // ------------------------------------------------------------------------------------------------ shop: showing the products
+  // The page brings each product in (blur and fade) as it comes into view, using the browser's IntersectionObserver.
+  // On some Macs no products showed at all, so this is a safety net that does not depend on it: a little after load,
+  // and again after any scroll or resize, every product in sight that is still hidden is brought in the same way; and
+  // if a few seconds after load none at all has been, they all are. Where the page's own reveal works, it has already
+  // shown them and this does nothing.
+  function revealNet() {
+    var cards = [].slice.call(document.querySelectorAll('.product-card'));
+    if (!cards.length) return;
+    function inView(c) {
+      var r = c.getBoundingClientRect();
+      return (r.width || r.height) && r.bottom > 0 && r.top < window.innerHeight && r.right > 0 && r.left < window.innerWidth;
+    }
+    function sweep() {
+      var k = 0;
+      cards.forEach(function (c) {
+        if (c.classList.contains('is-revealed') || c.__mhRev || !inView(c)) return;
+        c.__mhRev = true;
+        setTimeout(function () { c.classList.add('is-revealed'); }, (k++) * 60);
+      });
+    }
+    var t = 0;
+    function soon() { clearTimeout(t); t = setTimeout(sweep, 400); }
+    setTimeout(sweep, 1400);
+    window.addEventListener('scroll', soon, { passive: true, capture: true });
+    window.addEventListener('resize', soon);
+    setTimeout(function () {
+      if (!cards.some(function (c) { return c.classList.contains('is-revealed'); })) cards.forEach(function (c) { c.classList.add('is-revealed'); });
+    }, 3500);
+  }
+
+  // ------------------------------------------------------------------------------------------------ shop: the product in the box
+  // Wide screens: the box with the sizes starts with the product itself, its name and then its price, and below them two
+  // folds, Description and Size chart, each opening with a + that turns to an x. The words are taken from the view as
+  // it shows each product; the size chart is drawn from the product's own size-chart line (data-size-chart, with
+  // data-size-note under it). The panel under the picture and its round size-chart button are hidden there (CSS).
+  function productInfo() {
+    var pv = document.getElementById('product-view');
+    var sec = pv && pv.querySelector('.pv-section-secondary');
+    var sizes = pv && pv.querySelector('[data-product-view-sizes]');
+    if (!sec || !sizes) return;
+    var box = el('div', 'mh-pinfo');
+    // wide screens: at the head of the box with the sizes; phones: a box of its own where the panel under the pictures
+    // was (the sticky Add to cart keeps the sizes)
+    var panel = pv.querySelector('.product-view-panel');
+    var narrow = window.matchMedia ? matchMedia('(max-width: ' + NARROW + 'px)') : { matches: false };
+    function home() {
+      if (narrow.matches && panel && panel.parentNode) {
+        if (box.parentNode !== panel.parentNode) panel.parentNode.insertBefore(box, panel.nextSibling);
+        box.classList.add('is-own');
+      } else {
+        if (box.parentNode !== sec) sec.insertBefore(box, sec.firstChild);
+        box.classList.remove('is-own');
+      }
+    }
+    home();
+    if (narrow.addEventListener) narrow.addEventListener('change', home);
+    else if (narrow.addListener) narrow.addListener(home);
+    box.addEventListener('click', function (e) { e.stopPropagation(); });
+    var title = el('div', 'mh-ptitle', box);
+    var price = el('div', 'mh-pprice', box);
+    function fold(name) {
+      var f = el('div', 'mh-fold', box);
+      var b = el('button', 'mh-fold-head', f);
+      b.type = 'button';
+      b.setAttribute('aria-expanded', 'false');
+      el('span', '', b, name);
+      el('i', 'mh-x', b);
+      var inner = el('div', 'mh-fold-in', el('div', 'mh-fold-body', el('div', 'mh-fold-clip', f)));
+      b.addEventListener('click', function () {
+        var on = !f.classList.contains('is-open');
+        f.classList.toggle('is-open', on);
+        b.setAttribute('aria-expanded', on ? 'true' : 'false');
+      });
+      return { f: f, inner: inner };
+    }
+    var desc = fold('Description'), chart = fold('Size chart');
+    function txt(sel) { var e = pv.querySelector(sel); return e ? e.textContent.replace(/\s+/g, ' ').trim() : ''; }
+    function cardNow() {
+      var name = txt('.text-block-6').toLowerCase(), im = pv.querySelector('.product-view-img');
+      var src = im ? new URL(im.getAttribute('src') || '', location.href).href : '';
+      var group = [].filter.call(document.querySelectorAll('.product-card'), function (c) {
+        var t = c.querySelector('.product-title');
+        return ((t && t.textContent) || c.getAttribute('data-product-title') || '').replace(/\s+/g, ' ').trim().toLowerCase() === name;
+      });
+      return group.filter(function (c) {
+        var f = c.getAttribute('data-product-image-flat');
+        return f && new URL(f, location.href).href === src;
+      })[0] || group[0] || null;
+    }
+    var last = '';
+    function sync() {
+      title.textContent = txt('.text-block-6');
+      price.textContent = txt('.text-block-7');
+      var d = txt('.product-view-panel p');
+      desc.inner.textContent = d;
+      desc.f.style.display = d ? '' : 'none';
+      var card = cardNow();
+      var raw = (card && card.getAttribute('data-size-chart')) || '', note = (card && card.getAttribute('data-size-note')) || '';
+      if (raw + '|' + note === last) return;
+      last = raw + '|' + note;
+      chart.inner.innerHTML = '';
+      var rows = raw.split(';').map(function (r) { return r.split(',').map(function (c) { return c.trim(); }); })
+        .filter(function (r) { return r.length && r[0] !== ''; });
+      var lines = note.split('|').map(function (x) { return x.trim(); }).filter(Boolean);
+      if (rows.length) {
+        var cols = rows[0].length;
+        var g = el('div', 'mh-chart', chart.inner);
+        g.style.gridTemplateColumns = 'auto repeat(' + (cols - 1) + ', 1fr)';
+        rows.forEach(function (r, ri) {
+          for (var i = 0; i < cols; i++) el('div', (ri === 0 ? 'is-head' : '') + (i === 0 ? ' is-label' : ''), g, r[i] || '');
+        });
+      }
+      if (lines.length) {
+        var nn = el('div', 'mh-chart-note', chart.inner);
+        lines.forEach(function (l) { el('div', '', nn, l); });
+      }
+      chart.f.style.display = rows.length || lines.length ? '' : 'none';
+    }
+    // the view rebuilds its sizes each time it shows a product: that is the moment to read it again
+    if ('MutationObserver' in window) {
+      new MutationObserver(sync).observe(sizes, { childList: true });
+      // folds start closed each time the view opens
+      new MutationObserver(function () {
+        if (pv.classList.contains('is-open')) return;
+        [desc, chart].forEach(function (x) {
+          if (x.f.classList.contains('is-open')) { x.f.classList.remove('is-open'); x.f.querySelector('.mh-fold-head').setAttribute('aria-expanded', 'false'); }
+        });
+      }).observe(pv, { attributes: true, attributeFilter: ['class'] });
+    }
     sync();
   }
 
@@ -1316,7 +1506,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.3.2/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.4.0/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
@@ -1461,13 +1651,12 @@
     a.href = p.href || P.shop;
     a.setAttribute('aria-label', (p.label || 'View now') + ' (shop)');
     el('span', '', a, p.label || 'View now');
-    if (!TOUCH) return;
     var set = function (on) {
       box.classList.toggle('is-hov', on);
       if (box !== s) s.classList.toggle('is-hov', on);
     };
     a.addEventListener('click', function (e) {
-      if (box.classList.contains('is-hov')) return;
+      if (!byTouch() || box.classList.contains('is-hov')) return;
       e.preventDefault();
       [].forEach.call(document.querySelectorAll('.mhome-hit.is-hov,.mhome-video.is-hov'), function (n) { n.classList.remove('is-hov'); });
       set(true);
@@ -1603,6 +1792,27 @@
   }
 
   // ------------------------------------------------------------------------------------------------ start
+  // ------------------------------------------------------------------------------------------------ checkout
+  // A Checkout button at the foot of the dropdown cart (every page). For now it does nothing: later it will hand the
+  // cart (each item and its size) to the Shopify store and go to the matching Shopify cart. To wire that up, set
+  // window.MotorellaCheckout = function (items) { ... } before or after this script; it is called with the cart's items.
+  function checkoutButton() {
+    var n = 0;
+    (function find() {
+      var panel = document.getElementById('motorella-cart');
+      if (!panel) { if (n++ < 40) setTimeout(find, 250); return; }
+      if (panel.querySelector('.mh-checkout')) return;
+      var b = el('button', 'mh-checkout', panel, 'Checkout');
+      b.type = 'button';
+      b.setAttribute('data-mh-checkout', '');
+      b.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof window.MotorellaCheckout === 'function') window.MotorellaCheckout(readCart());
+      });
+    })();
+  }
+
   // ------------------------------------------------------------------------------------------------ the cart reminder
   // The first time someone leaves the shop, a notification drops in 30 to 60 seconds later, in the manner of a
   // phone's: the m mark, "motorella" where the sender goes, and a line about the cart. It stays until it is pressed or
@@ -1776,6 +1986,7 @@
     buildHeader();
     if (IS.shop) shop();
     if (IS.looks) looksOrbit();
+    checkoutButton();
     // the reminder: one still waiting is put straight back; otherwise the next is set
     var due = nudgePlan();
     if (nudgeState().pending) nudge(true);
