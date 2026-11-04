@@ -265,7 +265,9 @@
     '@media (min-width:' + (NARROW + 1) + 'px){',
     '  #product-view .pv-section-secondary{display:flex!important;flex-direction:column;align-items:stretch;gap:6px;width:340px!important;max-width:calc(100vw - 48px);',
     '    height:auto!important;min-height:0!important;margin:28px auto 0!important;padding:12px!important;box-sizing:border-box;',
-    '    background:rgba(14,14,17,.56);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4)}',
+    // (no blur of its own: the view already blurs the page behind it, and a blur inside the fading view only takes once
+    // the view is fully shown, so the box used to darken late and all at once)
+    '    background:rgba(14,14,17,.56)}',
     '  #product-view [data-product-view-sizes]{display:flex!important;flex-wrap:wrap;justify-content:center;gap:6px!important;width:auto;margin:0!important;padding:0!important}',
     '  #product-view [data-product-view-sizes]::before{content:"Select size";flex:0 0 100%;text-align:center;padding:2px 0 7px;',
     '    font:700 9px/1 "Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.7)}',
@@ -304,8 +306,11 @@
     // own in the same dark glass, with the name, price and the two folds (its round size-chart button goes)
     '@media (max-width:' + NARROW + 'px){',
     '  #product-view .product-view-panel{display:none!important}',
+    // (the sticky Add to cart keeps its frosted glass, so it fades in once the view itself is fully shown)
+    '  #product-view .pv-section-secondary [data-product-view-add]{opacity:0;transition:opacity .3s ease,background-color .3s ease}',
+    '  #product-view.mh-shown .pv-section-secondary [data-product-view-add]{opacity:1}',
     '  #product-view .mh-pinfo.is-own{display:block!important;position:relative;z-index:2;width:min(340px,calc(100vw - 32px));margin:18px auto 0;padding:14px 12px 2px;box-sizing:border-box;text-align:left;',
-    '    color:#fff;font-family:"Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif;background:rgba(14,14,17,.56);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4)}',
+    '    color:#fff;font-family:"Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif;background:rgba(14,14,17,.56)}',
     '}',
     // wide screens: the box moves up beside the picture, on the right of the first screen
     '@media (min-width:1220px){',
@@ -1067,9 +1072,21 @@
     if (pvEl && 'MutationObserver' in window) {
       var blur = el('div', 'mh-pv-blur');
       pvEl.parentNode.insertBefore(blur, pvEl);
+      var shownT = 0;
       var step = function () {
-        var on = pvEl.classList.contains('is-open');
+        var c = pvEl.classList;
+        // the page hides the view a moment after closing it; if it was opened again within that moment, that late
+        // hiding would leave an open view hidden (just the blurred page): an open view is never hidden
+        if (c.contains('is-open') && c.contains('is-hidden')) { c.remove('is-hidden'); return; }
+        var on = c.contains('is-open') && !c.contains('is-hidden');
         if (blur.classList.contains('is-on') !== on) blur.classList.toggle('is-on', on);
+        // fully shown a little after it opens (the view's own fade takes 0.4 s)
+        if (!on) {
+          clearTimeout(shownT); shownT = 0;
+          if (c.contains('mh-shown')) c.remove('mh-shown');
+        } else if (!c.contains('mh-shown') && !shownT) {
+          shownT = setTimeout(function () { shownT = 0; if (pvEl.classList.contains('is-open')) pvEl.classList.add('mh-shown'); }, 420);
+        }
       };
       new MutationObserver(step).observe(pvEl, { attributes: true, attributeFilter: ['class'] });
       step();
@@ -1599,7 +1616,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.4.2/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.4.3/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
