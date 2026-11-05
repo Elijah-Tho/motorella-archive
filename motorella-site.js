@@ -185,6 +185,15 @@
     // touch screens: the first tap opens them under the product, on one line, in the flow, pushing the next row down
     'html.mh-shop .product-card.mh-sz .product-sizes{display:flex!important;position:static!important;flex-wrap:nowrap;justify-content:space-between;gap:0;padding:2px 0 0;animation:mhszin .18s ease}',
     'html.mh-shop .product-card.mh-sz .product-sizes .size-option{flex:0 1 auto;padding:12px 1px;min-height:38px;box-sizing:border-box;white-space:nowrap;letter-spacing:0;font-size:clamp(7px,2.05vw,9px)}',
+    // phones: the sizes line is always there under each product, folded to nothing; the first tap opens it smoothly, so
+    // the products below glide down to make room (and glide back when it closes)
+    '@media (max-width:' + NARROW + 'px){',
+    '  html.mh-shop .product-card .product-sizes{display:flex!important;position:static!important;flex-wrap:nowrap;justify-content:space-between;gap:0;padding:0;',
+    '    max-height:0;overflow:hidden;opacity:0;pointer-events:none;animation:none!important;',
+    '    transition:max-height .38s cubic-bezier(.2,.75,.15,1),padding .38s cubic-bezier(.2,.75,.15,1),opacity .22s ease}',
+    '  html.mh-shop .product-card.mh-sz .product-sizes{max-height:44px;padding:2px 0 0;opacity:1;pointer-events:auto;',
+    '    transition:max-height .42s cubic-bezier(.2,.75,.15,1),padding .42s cubic-bezier(.2,.75,.15,1),opacity .3s ease .08s}',
+    '}',
     '@media (max-width:' + NARROW + 'px){',
     // phones: the fabric filter sits at the bottom of the screen, in the middle, twice the size
     '  html.mh-shop .mtla-toggle-bar{position:fixed!important;left:50%!important;right:auto!important;top:auto!important;bottom:calc(20px + env(safe-area-inset-bottom,0px))!important;margin:0!important;',
@@ -201,9 +210,13 @@
     '  #product-view{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}',
     // (the blur is a layer of its own just under the view, outside it, fading in and out with it: inside the fading view
     // a blur only takes once the view is fully shown, so the page went white first and then blurred all at once)
-    '  .mh-pv-blur{display:block;position:fixed;inset:0;z-index:899;pointer-events:none;opacity:0;transition:opacity .4s ease;',
-    '    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}',
-    '  .mh-pv-blur.is-on{opacity:1}',
+    // The blur itself grows from nothing (rather than a finished blur fading in): iPhones only draw a fading blur once
+    // the fade is over, which showed as a late, sudden darkening behind the product's box.
+    '  .mh-pv-blur{display:block;position:fixed;inset:0;z-index:899;pointer-events:none;visibility:hidden;',
+    '    -webkit-backdrop-filter:blur(0px);backdrop-filter:blur(0px);',
+    '    transition:-webkit-backdrop-filter .4s ease,backdrop-filter .4s ease,visibility 0s linear .4s}',
+    '  .mh-pv-blur.is-on{visibility:visible;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);',
+    '    transition:-webkit-backdrop-filter .4s ease,backdrop-filter .4s ease,visibility 0s}',
     // (no band behind the bar: the button floats on its own over the page, so no strip of blur shows between it and the title)
     '  #product-view .pv-section-secondary{position:fixed!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;z-index:50;margin:0!important;',
     '    display:flex!important;flex-direction:column;align-items:center;gap:8px;padding:0 16px calc(18px + env(safe-area-inset-bottom,0px))!important;box-sizing:border-box;',
@@ -1616,7 +1629,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.4.3/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.4.4/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
