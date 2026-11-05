@@ -171,10 +171,11 @@
     '.product-card.is-revealed{will-change:auto}',
     // the main cart opens clear of the header bar
     '#motorella-cart{top:calc(var(--mh-row) + 14px)!important}',
-    // the fabric filter's lit states: a grey, then lighter, then white (they were blue, green and pink)
-    '.mtla-dot[data-mtla-state="blue"] .mtla-dot-ring{border-color:#8e8e93!important;box-shadow:0 0 4px 0 rgba(142,142,147,.8),inset 0 0 1.3px 0 rgba(255,255,255,.65)!important}',
-    '.mtla-dot[data-mtla-state="pink"] .mtla-dot-ring{border-color:#fff!important;box-shadow:0 0 4px 0 rgba(255,255,255,.95),0 0 1px 0 rgba(0,0,0,.28),inset 0 0 1.3px 0 rgba(255,255,255,.65)!important}',
-    '.mtla-dot[data-mtla-state="green"] .mtla-dot-ring{border-color:#cfcfd2!important;box-shadow:0 0 4px 0 rgba(207,207,210,.85),inset 0 0 1.3px 0 rgba(255,255,255,.65)!important}',
+    // the fabric filter's lit states: graphite on the first tap, black on the second (they were blue, green and pink,
+    // then greys and white)
+    '.mtla-dot[data-mtla-state="blue"] .mtla-dot-ring{border-color:#48484c!important;box-shadow:0 0 3px 0 rgba(72,72,76,.5),inset 0 0 1.3px 0 rgba(255,255,255,.35)!important}',
+    '.mtla-dot[data-mtla-state="green"] .mtla-dot-ring{border-color:#2c2c2e!important;box-shadow:0 0 3.5px 0 rgba(44,44,46,.55),inset 0 0 1.3px 0 rgba(255,255,255,.3)!important}',
+    '.mtla-dot[data-mtla-state="pink"] .mtla-dot-ring{border-color:#111113!important;box-shadow:0 0 4px 0 rgba(17,17,19,.6),0 0 1px 0 rgba(0,0,0,.35),inset 0 0 1.3px 0 rgba(255,255,255,.25)!important}',
     // quick add: the sizes sit under the product, centred, each easy to hit
     'html.mh-shop .product-sizes{justify-content:center;flex-wrap:wrap;gap:0 2px;padding-top:4px;box-sizing:border-box;width:100%;left:0}',
     'html.mh-shop .product-sizes .size-option{display:inline-flex;align-items:center;justify-content:center;padding:8px 5px;line-height:1;cursor:pointer}',
@@ -199,6 +200,13 @@
     '  html.mh-shop .mtla-toggle-bar{position:fixed!important;left:50%!important;right:auto!important;top:auto!important;bottom:calc(20px + env(safe-area-inset-bottom,0px))!important;margin:0!important;',
     '    transform:translateX(-50%) scale(2.1);transform-origin:50% 100%;z-index:60;filter:drop-shadow(0 3px 6px rgba(0,0,0,.16))}',
     '  html.mh-shop .shop-body{padding-bottom:110px!important}',
+    // a fabric filter change fades and blurs the products as one layer (the page's own fade blurs every product on
+    // its own, which phones skip, so the change looked static there): the products themselves just swap underneath
+    '  html.mh-shop .product-card.mtla-fade-out,html.mh-shop .product-card.mtla-fade-in{opacity:1!important;-webkit-filter:none!important;filter:none!important;transform:none!important;transition:none!important}',
+    '  html.mh-shop .product-grid.mh-gout{opacity:0;-webkit-filter:blur(9px);filter:blur(9px);transform:translateY(-8px);will-change:opacity,filter,transform;',
+    '    transition:opacity .19s cubic-bezier(.22,.9,.32,1),-webkit-filter .19s cubic-bezier(.22,.9,.32,1),filter .19s cubic-bezier(.22,.9,.32,1),transform .19s cubic-bezier(.22,.9,.32,1)}',
+    '  html.mh-shop .product-grid.mh-gin{will-change:opacity,filter,transform;',
+    '    transition:opacity .3s cubic-bezier(.22,.9,.32,1),-webkit-filter .3s cubic-bezier(.22,.9,.32,1),filter .3s cubic-bezier(.22,.9,.32,1),transform .3s cubic-bezier(.22,.9,.32,1)}',
     // every row of products sizes to its content (the first two had a fixed height), so open sizes push the next row down
     '  html.mh-shop .product-grid{grid-template-rows:none!important}',
     // the product view: the first screen is the product alone (pictures, the title panel, the size chart button); the
@@ -947,7 +955,52 @@
     colorways();
     productInfo();
     revealNet();
+    filterFade();
     whenRail(railScroll);
+  }
+  // phones: when the fabric button changes the filter, the products fade and blur out together, swap while hidden
+  // (back to the top of the list if it was scrolled into), and fade back in, the same motion as on computers
+  function filterFade() {
+    var grid = document.querySelector('.product-grid');
+    if (!grid) return;
+    var mq = window.matchMedia('(max-width:' + NARROW + 'px)');
+    var timer, mo, t0;
+    function stop() {
+      if (mo) { mo.disconnect(); mo = null; }
+      clearTimeout(timer);
+    }
+    function back() {
+      stop();
+      // let the fade out finish if the swap came early, then bring the products back
+      timer = setTimeout(function () {
+        if (grid.getBoundingClientRect().top < 0) {
+          try { window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, 0); }
+        }
+        grid.classList.remove('mh-gout');
+        grid.classList.add('mh-gin');
+        timer = setTimeout(function () { grid.classList.remove('mh-gin'); }, 420);
+      }, Math.max(0, 190 - (Date.now() - t0)));
+    }
+    document.addEventListener('click', function (e) {
+      if (!mq.matches || !e.target.closest || !e.target.closest('.mtla-dot')) return;
+      stop();
+      t0 = Date.now();
+      grid.classList.remove('mh-gin');
+      grid.classList.add('mh-gout');
+      // the page swaps the products about 0.2s after the tap, marking them mtla-fade-in
+      if ('MutationObserver' in window) {
+        mo = new MutationObserver(function (ms) {
+          for (var i = 0; i < ms.length; i++) {
+            if (ms[i].target.classList && ms[i].target.classList.contains('mtla-fade-in')) { back(); return; }
+          }
+        });
+        mo.observe(grid, { attributes: true, subtree: true, attributeFilter: ['class'] });
+      }
+      timer = setTimeout(back, 420);
+    }, true);
+    // (leaving phone width mid-change never strands the products faded out)
+    var off = function () { if (!mq.matches) { stop(); grid.classList.remove('mh-gout', 'mh-gin'); } };
+    if (mq.addEventListener) mq.addEventListener('change', off); else if (mq.addListener) mq.addListener(off);
   }
   function whenReady(fn) {
     var n = 0;
@@ -1045,7 +1098,9 @@
       var last = window.__mhSoldOutCard;
       [].forEach.call(document.querySelectorAll('.pv-add-glow,.pv-add-text'), function (s) {
         if (!s.__mhText) s.__mhText = s.textContent;
-        s.textContent = last && last.classList.contains('is-sold-out') ? 'SOLD OUT' : s.__mhText;
+        // (only when it changes: rewriting it on every class change across the page made filter changes heavier)
+        var want = last && last.classList.contains('is-sold-out') ? 'SOLD OUT' : s.__mhText;
+        if (s.textContent !== want) s.textContent = want;
       });
     });
     mo.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class', 'style'] });
@@ -1636,7 +1691,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.4.5/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.4.6/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
