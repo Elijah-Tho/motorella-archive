@@ -319,6 +319,13 @@
     // own in the same dark glass, with the name, price and the two folds (its round size-chart button goes)
     '@media (max-width:' + NARROW + 'px){',
     '  #product-view .product-view-panel{display:none!important}',
+    // a bigger picture: about two-fifths of the screen's height (it was a small 220px), the side pictures kept just
+    // peeking in at the edges
+    '  #product-view .product-view-stage{height:min(360px,44vh)!important;height:min(360px,44svh)!important;width:calc(min(360px,44vh) * .7917)!important;',
+    '    width:calc(min(360px,44svh) * .7917)!important;max-width:calc(100vw - 48px)!important}',
+    '  #product-view .product-view-img{object-fit:contain}',
+    '  #product-view .product-view-img.is-inactive.pv-pos-next{transform:translateX(66vw) scale(.6)!important}',
+    '  #product-view .product-view-img.is-inactive.pv-pos-prev{transform:translateX(-66vw) scale(.6)!important}',
     // (the sticky Add to cart keeps its frosted glass, so it fades in once the view itself is fully shown)
     '  #product-view .pv-section-secondary [data-product-view-add]{opacity:0;transition:opacity .3s ease,background-color .3s ease}',
     '  #product-view.mh-shown .pv-section-secondary [data-product-view-add]{opacity:1}',
@@ -1629,7 +1636,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.4.4/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.4.5/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
