@@ -171,11 +171,15 @@
     '.product-card.is-revealed{will-change:auto}',
     // the main cart opens clear of the header bar
     '#motorella-cart{top:calc(var(--mh-row) + 14px)!important}',
-    // the fabric filter's lit states: graphite on the first tap, black on the second (they were blue, green and pink,
-    // then greys and white)
-    '.mtla-dot[data-mtla-state="blue"] .mtla-dot-ring{border-color:#48484c!important;box-shadow:0 0 3px 0 rgba(72,72,76,.5),inset 0 0 1.3px 0 rgba(255,255,255,.35)!important}',
-    '.mtla-dot[data-mtla-state="green"] .mtla-dot-ring{border-color:#2c2c2e!important;box-shadow:0 0 3.5px 0 rgba(44,44,46,.55),inset 0 0 1.3px 0 rgba(255,255,255,.3)!important}',
-    '.mtla-dot[data-mtla-state="pink"] .mtla-dot-ring{border-color:#111113!important;box-shadow:0 0 4px 0 rgba(17,17,19,.6),0 0 1px 0 rgba(0,0,0,.35),inset 0 0 1.3px 0 rgba(255,255,255,.25)!important}',
+    // the fabric filter's dots no longer light up in a colour (they were blue, green and pink, then greys, then graphite
+    // and black): each one presses in under the finger or the mouse and springs back out when let go
+    'html .mtla-dot[data-mtla-state] .mtla-dot-ring{border-color:transparent!important;box-shadow:none!important}',
+    '.mtla-dot{-webkit-tap-highlight-color:transparent;touch-action:manipulation;-webkit-user-select:none;user-select:none;',
+    '  transition:transform .24s cubic-bezier(.34,1.56,.64,1),filter .24s ease}',
+    '.mtla-dot::after{content:"";position:absolute;inset:1px;border-radius:50%;pointer-events:none;opacity:0;background:rgba(0,0,0,.05);',
+    '  box-shadow:inset 0 1.2px 2px rgba(0,0,0,.4),inset 0 -.6px .6px rgba(255,255,255,.6);transition:opacity .24s ease}',
+    '.mtla-dot.mh-press{transform:scale(.86);filter:brightness(.9);transition:transform .07s ease-out,filter .07s ease-out}',
+    '.mtla-dot.mh-press::after{opacity:1;transition:opacity .07s ease-out}',
     // quick add: the sizes sit under the product, centred, each easy to hit
     'html.mh-shop .product-sizes{justify-content:center;flex-wrap:wrap;gap:0 2px;padding-top:4px;box-sizing:border-box;width:100%;left:0}',
     'html.mh-shop .product-sizes .size-option{display:inline-flex;align-items:center;justify-content:center;padding:8px 5px;line-height:1;cursor:pointer}',
@@ -956,7 +960,42 @@
     productInfo();
     revealNet();
     filterFade();
+    pressDots();
     whenRail(railScroll);
+  }
+  // the fabric button's dots go down while pressed and come back up when let go; a quick tap still shows the press
+  // for a moment before it springs back (they never stay down)
+  function pressDots() {
+    var held = null;
+    function release() {
+      if (!held) return;
+      var d = held;
+      held = null;
+      clearTimeout(d.__mhUp);
+      d.__mhUp = setTimeout(function () { d.classList.remove('mh-press'); }, Math.max(0, 140 - (Date.now() - d.__mhDown)));
+    }
+    document.addEventListener('pointerdown', function (e) {
+      if (e.button > 0 || !e.target.closest) return;
+      var d = e.target.closest('.mtla-dot');
+      if (!d) return;
+      if (held && held !== d) release();
+      clearTimeout(d.__mhUp);
+      d.__mhDown = Date.now();
+      d.classList.add('mh-press');
+      held = d;
+    }, true);
+    document.addEventListener('pointerup', release, true);
+    document.addEventListener('pointercancel', release, true);
+    window.addEventListener('blur', release);
+    // (keyboard presses get the same quick press)
+    document.addEventListener('keydown', function (e) {
+      var d = e.target.closest && e.target.closest('.mtla-dot');
+      if (!d || (e.key !== 'Enter' && e.key !== ' ')) return;
+      d.__mhDown = Date.now();
+      d.classList.add('mh-press');
+      held = d;
+      release();
+    }, true);
   }
   // phones: when the fabric button changes the filter, the products fade and blur out together, swap while hidden
   // (back to the top of the list if it was scrolled into), and fade back in, the same motion as on computers
@@ -1691,7 +1730,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.4.6/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.4.7/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
