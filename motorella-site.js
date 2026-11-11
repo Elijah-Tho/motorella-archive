@@ -10,6 +10,7 @@
  * - Shop: the PRODUCTS heading goes, the count and the fabric button sit under the collection name; ?type=tops or
  *   ?type=shoes opens the catalogue filtered; cards marked data-sold-out="true" read SOLD OUT.
  * - Home: a scrolling page of full-screen pictures, each with a glass button to where it leads.
+ * - Classic views (/motorella-classic-01): a collection's pictures as tiles in a row, with a box about each.
  *
  * Everything the header lists lives in NAV below (or window.MOTORELLA_NAV, set before this script, to override).
  */
@@ -27,6 +28,7 @@
     looks: '/motorella-looks',
     archive: '/motorella-archive',
     c01: '/motorella-archive-01',
+    c01c: '/motorella-classic-01',
     ntf: '/motorella-nine-to-five'
   };
   var NAV = window.MOTORELLA_NAV || [
@@ -37,7 +39,7 @@
     ] },
     { label: 'Archive', href: P.archive, sub: [
       { label: 'View archive', href: P.archive },
-      { label: 'Collection 01', ways: { classic: '', legacy: P.c01 } },
+      { label: 'Collection 01', ways: { classic: P.c01c, legacy: P.c01 } },
       { label: 'Nine to Five', ways: { classic: '', legacy: P.ntf } },
       { label: 'Black Mesa', soon: true },
       { label: 'Consumer', soon: true }
@@ -57,7 +59,8 @@
     home: path === P.home || path === '/' || !!document.querySelector('[data-mtla-home]'),
     shop: path === P.shop || !!document.querySelector('.product-grid'),
     arch: path.indexOf(P.archive) === 0 || path === P.ntf || !!document.querySelector('[data-mtla-archive],[data-mtla-chairs]'),
-    looks: path === P.looks || !!document.querySelector('.lk-row')
+    looks: path === P.looks || !!document.querySelector('.lk-row'),
+    classic: path.indexOf('/motorella-classic') === 0 || !!document.querySelector('.mc-source')
   };
   var NARROW = 760; // px: below this the header is a MENU button
 
@@ -1730,7 +1733,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.4.7/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.0/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
@@ -2205,11 +2208,669 @@
   }
   window.MotorellaNudge = function () { nudge(); };
 
+  // ------------------------------------------------------------------------------------------------ classic view
+  // A collection's classic view (/motorella-classic-01): its campaign pictures as tiles standing in a row in depth,
+  // like files in a drawer. On arrival they fade in out of a blur around a ring, then swoop off it one after another
+  // into the row, in order. Scrolling, dragging, the arrow keys or a click go through them: the chosen one comes
+  // forward and turns to face you, and a box beside it (under it on a phone) says what it is. For a look: what is
+  // being worn. For an image: what it shows.
+  //
+  // In Webflow the pictures are ordinary elements on the page, so swapping one in is just Replace image:
+  //   .mc-source                (hidden on the live page)
+  //     .mc-item                one per picture, in order (duplicate one to add a picture, drag to reorder)
+  //       Image                 the picture (while it is Webflow's placeholder, the tile shows a grey instead)
+  //       .mc-kind              LOOK or IMAGE
+  //       .mc-title             its name (left as NULL: LOOK 01, IMAGE 01 … by order)
+  //       .mc-text              a line or two about it (for an image: what it shows)
+  //       .mc-wear              looks: what is worn, one piece per line
+  //       .mc-credit            Photography: …, Model: …, one per line
+  // With no .mc-item on the page at all, twelve stand-ins fill the row.
+  var MC_PAGES = {
+    '/motorella-classic-01': { name: 'Collection 01', legacy: P.c01 }
+  };
+  var MCF = '"Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif';
+  var MC_CSS = [
+    'html.mc-on,html.mc-on body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:#eeeeef}',
+    '.mc-source{display:none!important}',
+    // the room the tiles stand in
+    '.mc-stage{position:fixed;inset:0;z-index:1;overflow:hidden;perspective:1700px;perspective-origin:50% 50%;touch-action:none;',
+    '  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;cursor:grab}',
+    '.mc-stage.is-drag{cursor:grabbing}',
+    '.mc-tile{position:absolute;left:50%;top:50%;transform-origin:50% 50%;will-change:transform,opacity;cursor:pointer;opacity:0;outline:none}',
+    '.mc-face{position:absolute;inset:0;overflow:hidden;background:var(--mc-shade,#8a8a8d);',
+    '  box-shadow:0 30px 46px -26px rgba(0,0,0,.38),0 1px 4px rgba(0,0,0,.07)}',
+    // a faint sheen, as if the light came from the top left
+    '.mc-face::after{content:"";position:absolute;inset:0;pointer-events:none;',
+    '  background:linear-gradient(155deg,rgba(255,255,255,.17) 0%,rgba(255,255,255,0) 40%,rgba(0,0,0,0) 72%,rgba(0,0,0,.1) 100%)}',
+    '.mc-face img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .6s ease;',
+    '  -webkit-user-drag:none;pointer-events:none}',
+    '.mc-face img.is-in{opacity:1}',
+    '.mc-tile:focus-visible .mc-face{box-shadow:0 0 0 1px rgba(74,74,77,.6),0 30px 46px -26px rgba(0,0,0,.38)}',
+    // its number on the floor under it
+    '.mc-no{position:absolute;right:0;top:calc(100% + 14px);display:flex;align-items:center;gap:7px;white-space:nowrap;pointer-events:none;',
+    '  font:700 8px/1 ' + MCF + ';letter-spacing:.2em;color:rgba(74,74,77,.5)}',
+    '.mc-no::after{content:"";width:14px;height:1px;background:currentColor}',
+    // the words around it: the collection and its two views (top left), the filters (bottom right), a hint
+    '.mc-ui{position:fixed;inset:0;z-index:5;pointer-events:none;font-family:' + MCF + ';color:#4a4a4d;-webkit-font-smoothing:antialiased}',
+    '.mc-head{position:absolute;left:var(--mh-pad,40px);top:calc(var(--mh-row,64px) + 26px);display:flex;flex-direction:column;gap:9px;',
+    '  opacity:0;filter:blur(6px);transition:opacity .8s ease,filter .8s ease}',
+    '.mc-name{font-size:11px;line-height:1;font-weight:700;letter-spacing:.16em;text-transform:uppercase}',
+    '.mc-name sup,.mc-filter sup{font-size:7px;line-height:1;letter-spacing:.04em;margin-left:3px;vertical-align:top;position:relative;top:-2px}',
+    '.mc-name sup{color:rgba(74,74,77,.55)}',
+    '.mc-ways{display:flex;gap:14px;pointer-events:auto}',
+    '.mc-way{font-size:10px;line-height:14px;letter-spacing:.1em;text-transform:uppercase;color:rgba(74,74,77,.5);text-decoration:none;transition:color .25s ease}',
+    'a.mc-way:hover{color:#4a4a4d}',
+    '.mc-way.is-here{color:#4a4a4d;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}',
+    '.mc-filters{position:absolute;right:var(--mh-pad,40px);bottom:calc(30px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;',
+    '  align-items:flex-end;gap:5px;pointer-events:auto;opacity:0;filter:blur(6px);transition:opacity .8s ease,filter .8s ease}',
+    '.mc-filter{font:700 10px/1 ' + MCF + ';letter-spacing:.14em;text-transform:uppercase;color:rgba(74,74,77,.42);background:none;border:0;',
+    '  padding:4px 0;margin:0;cursor:pointer;transition:color .25s ease;-webkit-tap-highlight-color:transparent}',
+    '.mc-filter:hover,.mc-filter.is-on{color:#4a4a4d}',
+    '.mc-filter:focus-visible,.mc-way:focus-visible,.mc-p button:focus-visible{outline:1px solid currentColor;outline-offset:3px}',
+    'html.mc-ready .mc-head,html.mc-ready .mc-filters{opacity:1;filter:none}',
+    '.mc-hint{position:absolute;left:50%;bottom:calc(32px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);white-space:nowrap;',
+    '  font-size:9px;line-height:1;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:rgba(74,74,77,.5);',
+    '  opacity:0;filter:blur(6px);transition:opacity .7s ease,filter .7s ease}',
+    '.mc-hint.is-on{opacity:1;filter:none}',
+    // the box about the chosen picture: the dark frosted glass of the cart and the product box. (Its blur grows from
+    // nothing as it appears rather than fading in whole: iPhones only draw a fading blur once the fade has ended.)
+    '.mc-panel{position:fixed;z-index:6;top:53%;right:max(var(--mh-pad,40px),calc(50vw - 660px));width:300px;box-sizing:border-box;',
+    '  max-height:calc(100vh - var(--mh-row,64px) - 64px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;',
+    '  color:#fff;font-family:' + MCF + ';-webkit-font-smoothing:antialiased;transform:translate(16px,-50%);visibility:hidden;pointer-events:none;',
+    '  background:rgba(14,14,17,0);-webkit-backdrop-filter:blur(0px) saturate(1);backdrop-filter:blur(0px) saturate(1);',
+    '  transition:background-color .45s ease,-webkit-backdrop-filter .45s ease,backdrop-filter .45s ease,transform .6s cubic-bezier(.2,.75,.15,1),visibility 0s linear .6s}',
+    '.mc-panel.is-on{visibility:visible;pointer-events:auto;transform:translate(0,-50%);background:rgba(14,14,17,.56);',
+    '  -webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);',
+    '  transition:background-color .45s ease,-webkit-backdrop-filter .45s ease,backdrop-filter .45s ease,transform .6s cubic-bezier(.2,.75,.15,1),visibility 0s}',
+    '.mc-p{opacity:0;filter:blur(6px);transition:opacity .3s ease,filter .4s ease}',
+    '.mc-panel.is-on .mc-p{opacity:1;filter:none;transition:opacity .4s ease .1s,filter .5s ease .1s}',
+    '.mc-panel.is-on .mc-p-body.is-swap{opacity:0;filter:blur(4px)}',
+    '.mc-p-in{padding:14px 16px 4px}',
+    '.mc-p-top{display:flex;align-items:center;justify-content:space-between;margin:0 0 16px}',
+    '.mc-p-back{display:flex;align-items:center;gap:9px;padding:4px 0;margin:0;background:none;border:0;cursor:pointer;color:rgba(255,255,255,.7);',
+    '  font:700 9px/1 ' + MCF + ';letter-spacing:.2em;text-transform:uppercase;transition:color .25s ease;-webkit-tap-highlight-color:transparent}',
+    '.mc-p-back:hover{color:#fff}',
+    '.mc-p-back i{display:block;width:5px;height:5px;margin-left:2px;border-left:1px solid currentColor;border-bottom:1px solid currentColor;transform:rotate(45deg)}',
+    '.mc-p-idx{font:700 9px/1 ' + MCF + ';letter-spacing:.16em;color:rgba(255,255,255,.55);font-variant-numeric:tabular-nums}',
+    '.mc-p-body{transition:opacity .16s ease,filter .16s ease}',
+    '.mc-p-title{font-size:13px;line-height:1.3;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff}',
+    '.mc-p-sub{margin:6px 0 14px;font-size:9px;line-height:1.2;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.55)}',
+    '.mc-p-sec{border-top:1px solid rgba(255,255,255,.12);padding:11px 0 13px}',
+    '.mc-p-label{margin:0 0 9px;font:700 9px/1 ' + MCF + ';letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.85)}',
+    '.mc-p-text{font-size:10px;line-height:1.6;letter-spacing:.02em;color:rgba(255,255,255,.72);white-space:pre-line}',
+    '.mc-p-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}',
+    '.mc-p-list li{display:flex;align-items:baseline;gap:10px;font-size:10px;line-height:1.4;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.72)}',
+    '.mc-p-list b{flex:none;width:15px;font-size:8px;font-weight:700;letter-spacing:.1em;color:rgba(255,255,255,.38);font-variant-numeric:tabular-nums}',
+    '.mc-p-rows{display:grid;grid-template-columns:auto 1fr;gap:7px 16px;margin:0;font-size:10px;line-height:1.4;letter-spacing:.06em;text-transform:uppercase}',
+    '.mc-p-rows dt{padding-top:1px;font-size:8px;font-weight:700;letter-spacing:.18em;color:rgba(255,255,255,.42)}',
+    '.mc-p-rows dd{margin:0;color:rgba(255,255,255,.72)}',
+    '.mc-p-nav{display:grid;grid-template-columns:1fr 1fr;gap:1px}',
+    '.mc-p-nav button{height:42px;margin:0;border:0;border-radius:0;background:rgba(255,255,255,.14);color:#fff;cursor:pointer;',
+    '  font:700 9px/1 ' + MCF + ';letter-spacing:.2em;text-indent:.2em;text-transform:uppercase;transition:background-color .25s ease,opacity .25s ease;-webkit-tap-highlight-color:transparent}',
+    '@media (any-hover:hover){.mc-p-nav button:hover{background:rgba(14,14,17,.5)}}',
+    '.mc-p-nav button:active{background:rgba(14,14,17,.5)}',
+    '.mc-p-nav button:disabled{opacity:.32;cursor:default;background:rgba(255,255,255,.14)}',
+    // phones: the box sits at the foot of the screen, the chosen tile above it; the filters go under the name
+    '@media (max-width:' + NARROW + 'px){',
+    '  .mc-head{top:calc(var(--mh-row,58px) + 14px);gap:8px}',
+    '  .mc-filters{left:var(--mh-pad,20px);right:auto;top:calc(var(--mh-row,58px) + 62px);bottom:auto;flex-direction:row;gap:16px}',
+    '  html.mc-open .mc-filters{opacity:0;filter:blur(6px);pointer-events:none}',
+    '  .mc-hint{bottom:calc(40px + env(safe-area-inset-bottom,0px))}',
+    '  .mc-panel{left:12px;right:12px;width:auto;top:auto;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateY(22px);',
+    '    max-height:46vh;max-height:46svh}',
+    '  .mc-panel.is-on{transform:none}',
+    '  .mc-p-in{padding:13px 14px 2px}',
+    '  .mc-p-top{margin-bottom:12px}',
+    '  .mc-p-sec{padding:10px 0 11px}',
+    '}'
+  ];
+
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function smooth(a, b, v) { var t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); }
+  function easeIO(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+  function textOf(e) {
+    var c = e.cloneNode(true);
+    [].forEach.call(c.querySelectorAll('br'), function (b) { b.parentNode.replaceChild(document.createTextNode('\n'), b); });
+    [].forEach.call(c.querySelectorAll('p,li,div'), function (b) { b.appendChild(document.createTextNode('\n')); });
+    return c.textContent.replace(/[ \t ]+/g, ' ').replace(/ *\n[ \n]*/g, '\n').trim();
+  }
+  function linesOf(t) {
+    return t ? t.split(/\n|;|\|/).map(function (x) { return x.trim(); }).filter(Boolean) : [];
+  }
+  function blank(t) { return !t || /^(null|empty|-+)$/i.test(t.trim()); }
+  function classicItems(src) {
+    var out = [];
+    var nodes = src ? src.querySelectorAll('.mc-item,[data-mc-item]') : [];
+    [].forEach.call(nodes, function (n) {
+      var img = n.querySelector('img');
+      var s = img ? img.getAttribute('src') || '' : '';
+      // Webflow's own placeholder picture means no picture yet
+      if (/\/placeholder\.[0-9a-f]*\.?svg|plugins\/Basic\/assets\/placeholder/i.test(s)) s = '';
+      var get = function (c) { var e = n.querySelector('.' + c); return e ? textOf(e) : ''; };
+      var kind = (get('mc-kind') || n.getAttribute('data-kind') || '').toLowerCase();
+      var alt = img ? img.getAttribute('alt') || '' : '';
+      out.push({
+        src: s,
+        srcset: s && img.getAttribute('srcset') || '',
+        alt: /__wf_reserved/.test(alt) ? '' : alt,
+        kind: /^(im|pic|photo|still|scene|place)/.test(kind) ? 'image' : 'look',
+        title: get('mc-title'),
+        text: get('mc-text'),
+        wear: linesOf(get('mc-wear')).filter(function (x) { return !blank(x); }),
+        credit: linesOf(get('mc-credit')).filter(function (x) { return !blank(x.replace(/^[^:]*:/, '')); })
+      });
+    });
+    if (!out.length) {
+      'LLILLILILLIL'.split('').forEach(function (k) {
+        out.push({ src: '', srcset: '', alt: '', kind: k === 'I' ? 'image' : 'look', title: '', text: '', wear: [], credit: [] });
+      });
+    }
+    return out;
+  }
+
+  function classic() {
+    var de = document.documentElement;
+    var src = document.querySelector('.mc-source');
+    var conf = MC_PAGES[path] || {};
+    var cname = (src && src.getAttribute('data-collection')) || conf.name || 'Collection';
+    var legacy = (src && src.getAttribute('data-legacy')) || conf.legacy || '';
+    var ratio = parseFloat(((src && src.getAttribute('data-ratio')) || '').replace(/^(\d+(?:\.\d+)?)\s*[:/x]\s*(\d+(?:\.\d+)?)$/, function (m, a, b) { return String(a / b); })) || 0.8;
+    var items = classicItems(src);
+    var n = items.length;
+    var st = el('style');
+    st.id = 'mc-css';
+    st.textContent = MC_CSS.join('\n');
+    document.head.appendChild(st);
+    de.classList.add('mc-on');
+    var reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+    var RAD = Math.PI / 180;
+
+    // names: LOOK 01 … and IMAGE 01 … in order, unless one is given
+    var nk = { look: 0, image: 0 };
+    items.forEach(function (it) {
+      it.no = ++nk[it.kind];
+      it.name = blank(it.title) ? (it.kind === 'look' ? 'Look ' : 'Image ') + pad2(it.no) : it.title;
+    });
+
+    // ---- the tiles
+    var stage = el('div', 'mc-stage', document.body);
+    stage.setAttribute('role', 'listbox');
+    stage.setAttribute('aria-label', cname + ', classic');
+    var tiles = items.map(function (it, i) {
+      var t = el('div', 'mc-tile', stage);
+      t.setAttribute('role', 'option');
+      t.setAttribute('aria-label', it.name);
+      t.tabIndex = -1;
+      var face = el('div', 'mc-face', t);
+      // stand-ins: from a light black to a light grey along the row
+      var g = n > 1 ? i / (n - 1) : 0;
+      var c = Math.round(46 + g * 156);
+      face.style.setProperty('--mc-shade', 'rgb(' + c + ',' + c + ',' + (c + 3) + ')');
+      if (it.src) {
+        var im = el('img', '', face);
+        im.alt = it.alt || it.name;
+        im.decoding = 'async';
+        im.draggable = false;
+        if (it.srcset) { im.setAttribute('srcset', it.srcset); im.setAttribute('sizes', '(max-width: 760px) 300px, 460px'); }
+        im.onload = function () { im.classList.add('is-in'); };
+        im.src = it.src;
+        if (im.complete && im.naturalWidth) im.classList.add('is-in');
+      }
+      el('div', 'mc-no', t, pad2(i + 1));
+      return { el: t, i: i, r: i, rT: i, v: 1, vT: 1, h: 0, hT: 0, fb: '', tf: '', o: '', zi: '', pe: '' };
+    });
+
+    // ---- the words around them
+    var ui = el('div', 'mc-ui', document.body);
+    var head = el('div', 'mc-head', ui);
+    var nm = el('div', 'mc-name', head, cname);
+    el('sup', '', nm, String(n));
+    var ways = el('div', 'mc-ways', head);
+    el('span', 'mc-way is-here', ways, 'Classic').setAttribute('aria-current', 'page');
+    if (legacy) { var lg = el('a', 'mc-way', ways, 'Legacy'); lg.href = legacy; }
+    var counts = { all: n, look: nk.look, image: nk.image };
+    var filters = el('div', 'mc-filters', ui);
+    var fBtns = {};
+    if (nk.look && nk.image) {
+      [['all', 'All'], ['look', 'Looks'], ['image', 'Images']].forEach(function (f) {
+        var b = el('button', 'mc-filter' + (f[0] === 'all' ? ' is-on' : ''), filters, f[1]);
+        b.type = 'button';
+        b.setAttribute('aria-pressed', f[0] === 'all' ? 'true' : 'false');
+        el('sup', '', b, String(counts[f[0]]));
+        b.addEventListener('click', function () { setFilter(f[0]); });
+        fBtns[f[0]] = b;
+      });
+    }
+    var hint = el('div', 'mc-hint', ui, (window.matchMedia && matchMedia('(hover: none)').matches) ? 'Swipe or tap a picture' : 'Scroll or select a picture');
+
+    // ---- the box
+    var panel = el('aside', 'mc-panel', document.body);
+    panel.setAttribute('aria-label', 'About this picture');
+    var pc = el('div', 'mc-p', panel);
+    var pin = el('div', 'mc-p-in', pc);
+    var ptop = el('div', 'mc-p-top', pin);
+    var back = el('button', 'mc-p-back', ptop);
+    back.type = 'button';
+    back.innerHTML = '<i></i><span>Overview</span>';
+    var pidx = el('div', 'mc-p-idx', ptop);
+    var pbody = el('div', 'mc-p-body', pin);
+    var pnav = el('div', 'mc-p-nav', pc);
+    var prevB = el('button', '', pnav, 'Prev');
+    var nextB = el('button', '', pnav, 'Next');
+    prevB.type = nextB.type = 'button';
+    back.addEventListener('click', function () { setOpen(false); });
+    prevB.addEventListener('click', function () { go(-1); });
+    nextB.addEventListener('click', function () { go(1); });
+
+    function sec(label) {
+      var s = el('div', 'mc-p-sec', pbody);
+      el('div', 'mc-p-label', s, label);
+      return s;
+    }
+    function fill(i) {
+      var it = items[i];
+      pbody.innerHTML = '';
+      el('div', 'mc-p-title', pbody, it.name);
+      el('div', 'mc-p-sub', pbody, (it.kind === 'look' ? 'Look' : 'Image') + ' — ' + cname);
+      if (it.kind === 'look') {
+        var ul = el('ul', 'mc-p-list', sec('Wearing'));
+        (it.wear.length ? it.wear : ['Empty', 'Empty', 'Empty']).forEach(function (w, k) {
+          var li = el('li', '', ul);
+          el('b', '', li, pad2(k + 1));
+          el('span', '', li, w);
+        });
+        el('div', 'mc-p-text', sec('Notes'), blank(it.text) ? 'NULL' : it.text);
+      } else {
+        el('div', 'mc-p-text', sec('Shown'), blank(it.text) ? 'NULL' : it.text);
+      }
+      var dl = el('dl', 'mc-p-rows', sec('Credits'));
+      var cr = it.credit.length ? it.credit : (it.kind === 'look' ? ['Photography: Empty', 'Model: Empty'] : ['Photography: Empty', 'Location: Empty']);
+      cr.forEach(function (c) {
+        var m = /^([^:]{1,28}):\s*(.*)$/.exec(c);
+        el('dt', '', dl, m ? m[1] : '—');
+        el('dd', '', dl, m ? (m[2] || 'Empty') : c);
+      });
+      var r = vis.indexOf(i);
+      pidx.textContent = pad2(r + 1) + ' / ' + pad2(vis.length);
+      prevB.disabled = r <= 0;
+      nextB.disabled = r >= vis.length - 1;
+      tiles.forEach(function (t) { t.el.setAttribute('aria-selected', t.i === i ? 'true' : 'false'); });
+    }
+    var shown = -1, swapT = 0;
+    function showInfo(i, now) {
+      if (i === shown) return;
+      shown = i;
+      clearTimeout(swapT);
+      if (now || !panel.classList.contains('is-on')) { pbody.classList.remove('is-swap'); fill(i); return; }
+      pbody.classList.add('is-swap');
+      swapT = setTimeout(function () { fill(shown); pbody.classList.remove('is-swap'); }, 160);
+    }
+
+    // ---- state
+    var filter = 'all', vis = [];
+    var s = 0, sT = 0, m = 0, mT = 0, open = false, cur = 0, ready = false;
+    function computeVis() {
+      vis = [];
+      items.forEach(function (it, i) { if (filter === 'all' || it.kind === filter) vis.push(i); });
+      tiles.forEach(function (t) {
+        var r = vis.indexOf(t.i);
+        t.vT = r >= 0 ? 1 : 0;
+        if (r >= 0) t.rT = r;
+      });
+    }
+    computeVis();
+
+    var vw = 0, vh = 0, phone = false, TW = 0, TH = 0, focusX = 0, A0 = 58, TILT = -12;
+    function measure() {
+      vw = window.innerWidth;
+      vh = window.innerHeight;
+      phone = vw <= NARROW;
+      A0 = phone ? 62 : 58;
+      TILT = phone ? -9 : -12;
+      TH = phone ? Math.min(vh * 0.36, 310, (vw - 110) / ratio) : clamp(vh * 0.46, 240, 520);
+      TW = TH * ratio;
+      tiles.forEach(function (t) {
+        var s1 = t.el.style;
+        s1.width = TW.toFixed(1) + 'px';
+        s1.height = TH.toFixed(1) + 'px';
+        s1.marginLeft = (-TW / 2).toFixed(1) + 'px';
+        s1.marginTop = (-TH / 2).toFixed(1) + 'px';
+      });
+      stage.style.perspective = (phone ? 1150 : 1700) + 'px';
+      if (phone) focusX = 0;
+      else {
+        // the chosen tile stands in the middle of the room left beside the box
+        var right = Math.max(phone ? 20 : 40, vw / 2 - 660);
+        var pw = panel.offsetWidth || 300;
+        focusX = (vw - right - pw) / 2 - vw / 2 - 12;
+      }
+    }
+
+    // where a tile at rank r rests: in the row (closed) or around the chosen one (open)
+    var P1 = {}, P2 = {};
+    function rest(r, out) {
+      var nv = Math.max(1, vis.length);
+      var cosA = Math.cos(A0 * RAD);
+      var Sc = clamp((vw * (phone ? 0.92 : 0.74) - TW * cosA) / Math.max(1, nv - 1), TW * (phone ? 0.085 : 0.13), TW * 0.34);
+      var half = (vw * (phone ? 0.46 : 0.42) - TW * cosA / 2) / Sc;
+      var mid = (nv - 1) / 2;
+      var p = half >= mid ? mid : clamp(s, half, nv - 1 - half);
+      var xc = Sc * (r - p) - TW * (phone ? 0.07 : 0.13);
+      var d = r - s;
+      var So = TW * (phone ? 0.1 : 0.13), G = TW * (phone ? 0.62 : 0.74);
+      var xo = focusX + So * d + G * Math.tanh(d * 1.5);
+      var e = Math.exp(-d * d * 2.4);
+      var mm = easeIO(clamp(m, 0, 1));
+      out.x = xc + (xo - xc) * mm;
+      out.y = phone ? -vh * (0.025 + 0.135 * mm) : vh * 0.03;
+      out.z = mm * TW * (0.42 * e - 0.14 * (1 - e));
+      out.a = -(A0 - mm * (A0 - 4) * e);
+      out.f = mm * e;
+    }
+    // the arrival: a ring of tiles fading in out of a blur in order, which then swoop off it into the row in order
+    var t0 = 0, intro = !reduce;
+    function arrive(t, r, nv, fin, out) {
+      var stA = Math.min(0.055, 0.8 / nv), stL = Math.min(0.055, 0.95 / nv), fly = 1.05;
+      var ap = r * stA, lv = 0.55 + nv * stA * 0.55 + r * stL;
+      var R = phone ? Math.min(vw * 0.25, vh * 0.17) : Math.min(vh * 0.27, vw * 0.19);
+      var ph = -Math.PI / 2 + (r / nv) * Math.PI * 2 + t * 1.15;
+      var rx = Math.cos(ph) * R * 1.15, ry = Math.sin(ph) * R * 0.92 + fin.y, rz = -TW * 0.45 + Math.sin(ph) * R * 0.3;
+      var q = easeIO(clamp((t - lv) / fly, 0, 1));
+      var arc = Math.sin(Math.PI * q);
+      out.x = rx + (fin.x - rx) * q;
+      out.y = ry + (fin.y - ry) * q - arc * TH * 0.14;
+      out.z = rz + (fin.z - rz) * q + arc * TW * 0.55;
+      var ra = -A0 * 0.3;
+      out.a = ra + (fin.a - ra) * q;
+      var rz0 = ((ph / RAD + 90) % 360 + 540) % 360 - 180;
+      out.rz = rz0 * 0.42 * (1 - q);
+      out.sc = (phone ? 0.46 : 0.56) + (phone ? 0.54 : 0.44) * q;
+      out.op = smooth(ap, ap + 0.42, t);
+      out.blur = (1 - smooth(ap, ap + 0.8, t)) * (phone ? 9 : 14);
+      out.done = t >= lv + fly;
+    }
+
+    var raf = 0, last = 0;
+    function kick() {
+      if (!raf) raf = requestAnimationFrame(frame);
+    }
+    function frame(now) {
+      raf = 0;
+      var dt = last ? Math.min(0.05, (now - last) / 1000) : 0.016;
+      last = now;
+      var busy = false;
+      var k1 = 1 - Math.exp(-dt * 9), k2 = 1 - Math.exp(-dt * 6.5), k3 = 1 - Math.exp(-dt * 12), k4 = 1 - Math.exp(-dt * 7);
+      if (Math.abs(sT - s) > 0.0006) { s += (sT - s) * k1; busy = true; } else s = sT;
+      if (Math.abs(mT - m) > 0.0008) { m += (mT - m) * k2; busy = true; } else m = mT;
+      var nv = Math.max(1, vis.length);
+      var t = (now - t0) / 1000;
+      var done = true;
+      for (var i = 0; i < tiles.length; i++) {
+        var tl = tiles[i];
+        if (Math.abs(tl.rT - tl.r) > 0.0006) { tl.r += (tl.rT - tl.r) * k4; busy = true; } else tl.r = tl.rT;
+        if (Math.abs(tl.vT - tl.v) > 0.002) { tl.v += (tl.vT - tl.v) * k4; busy = true; } else tl.v = tl.vT;
+        if (Math.abs(tl.hT - tl.h) > 0.002) { tl.h += (tl.hT - tl.h) * k3; busy = true; } else tl.h = tl.hT;
+        rest(tl.r, P1);
+        var x = P1.x, y = P1.y, z = P1.z, a = P1.a, rz = 0, sc = 0.9 + 0.1 * tl.v, op = tl.v, bl = (1 - tl.v) * 8;
+        // a pointer over a tile lifts it a little out of the row, like a file pulled up out of a drawer
+        var lift = tl.h * (1 - P1.f);
+        y -= lift * TH * (0.06 - 0.025 * m);
+        a += lift * 7;
+        z += lift * 12;
+        if (intro) {
+          arrive(t, tl.r, nv, { x: x, y: y, z: z, a: a }, P2);
+          x = P2.x; y = P2.y; z = P2.z; a = P2.a; rz = P2.rz; sc *= P2.sc; op *= P2.op; bl = Math.max(bl, P2.blur);
+          if (!P2.done) done = false;
+        }
+        var tf = 'rotateX(' + TILT + 'deg) translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,' + z.toFixed(1) + 'px) rotateZ(' +
+          rz.toFixed(2) + 'deg) rotateY(' + a.toFixed(2) + 'deg) scale(' + sc.toFixed(4) + ')';
+        if (tf !== tl.tf) { tl.el.style.transform = tf; tl.tf = tf; }
+        var o = op.toFixed(3);
+        if (o !== tl.o) { tl.el.style.opacity = o; tl.o = o; }
+        var fb = bl > 0.2 ? 'blur(' + bl.toFixed(1) + 'px)' : 'none';
+        if (fb !== tl.fb) { tl.el.style.filter = fb; tl.fb = fb; }
+        // in front: the chosen one, then (in the row) each tile over the one after it
+        var zi = String(5000 + Math.round(z / (TW * 0.4) * (nv * 10 + 30)) - Math.round(tl.r * 10));
+        if (zi !== tl.zi) { tl.el.style.zIndex = zi; tl.zi = zi; }
+        var pe = tl.v < 0.5 ? 'none' : '';
+        if (pe !== tl.pe) { tl.el.style.pointerEvents = pe; tl.pe = pe; }
+      }
+      if (intro && done) { intro = false; arrived(); }
+      if (busy || intro) kick();
+    }
+
+    // ---- going through them
+    function active() { return vis[clamp(Math.round(sT), 0, vis.length - 1)]; }
+    function sync() {
+      var a = active();
+      if (a == null) return;
+      if (a !== cur) { cur = a; if (open) showInfo(a); }
+    }
+    function setOpen(on) {
+      if (on === open || !ready) return;
+      open = on;
+      mT = on ? 1 : 0;
+      if (on) { sT = clamp(Math.round(sT), 0, vis.length - 1); cur = active(); showInfo(cur, true); }
+      de.classList.toggle('mc-open', on);
+      panel.classList.toggle('is-on', on);
+      hintOff();
+      tiles.forEach(function (t) { t.hT = 0; });
+      kick();
+    }
+    function go(dir) {
+      if (!ready) return;
+      if (!open) { setOpen(true); return; }
+      sT = clamp(Math.round(sT) + dir, 0, vis.length - 1);
+      sync();
+      kick();
+    }
+    function choose(i) {
+      var r = vis.indexOf(i);
+      if (r < 0) return;
+      sT = r;
+      sync();
+      if (!open) setOpen(true);
+      else showInfo(i);
+      kick();
+    }
+    function setFilter(f) {
+      if (f === filter || !ready) return;
+      var keep = active(), was = vis.indexOf(keep);
+      filter = f;
+      Object.keys(fBtns).forEach(function (k) {
+        fBtns[k].classList.toggle('is-on', k === f);
+        fBtns[k].setAttribute('aria-pressed', k === f ? 'true' : 'false');
+      });
+      computeVis();
+      var r = vis.indexOf(keep);
+      if (r < 0) {
+        // the chosen one went: the nearest left in the order takes its place
+        var best = 0, bd = 1e9;
+        vis.forEach(function (i, k) { var d = Math.abs(i - keep); if (d < bd) { bd = d; best = k; } });
+        r = best;
+      }
+      s += r - (was < 0 ? r : was);
+      sT = r;
+      cur = vis[r];
+      shown = -1;
+      if (open) showInfo(cur);
+      pnudge();
+      kick();
+    }
+    function pnudge() {
+      if (!open) return;
+      var r = vis.indexOf(cur);
+      pidx.textContent = pad2(r + 1) + ' / ' + pad2(vis.length);
+    }
+
+    var hintT = 0;
+    function hintOff() { clearTimeout(hintT); hint.classList.remove('is-on'); }
+    function arrived() {
+      ready = true;
+      de.classList.add('mc-ready');
+      tiles.forEach(function (t) { t.el.style.filter = 'none'; t.fb = 'none'; });
+      hintT = setTimeout(function () { if (!open) hint.classList.add('is-on'); }, 500);
+    }
+
+    // pointer: drag sideways to go through, tap or click a tile to choose it, tap the room to go back to the row
+    var drag = null;
+    function stepPx() { return TW * (phone ? 0.1 + 0.62 * 0.9 : 0.13 + 0.74 * 0.9); }
+    stage.addEventListener('pointerdown', function (e) {
+      if (!ready || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      drag = { x: e.clientX, y: e.clientY, s0: sT, moved: false, id: e.pointerId, tile: e.target.closest ? e.target.closest('.mc-tile') : null,
+        lx: e.clientX, lt: performance.now(), vx: 0 };
+    });
+    stage.addEventListener('pointermove', function (e) {
+      if (!drag) {
+        if (e.pointerType !== 'mouse' || !ready) return;
+        var over = e.target.closest ? e.target.closest('.mc-tile') : null;
+        tiles.forEach(function (t) { t.hT = t.el === over && !(open && t.i === cur) ? 1 : 0; });
+        kick();
+        return;
+      }
+      if (e.pointerId !== drag.id) return;
+      var dx = e.clientX - drag.x;
+      if (!drag.moved && Math.abs(dx) > 7 && Math.abs(dx) > Math.abs(e.clientY - drag.y)) {
+        drag.moved = true;
+        stage.classList.add('is-drag');
+        try { stage.setPointerCapture(e.pointerId); } catch (er) {}
+        tiles.forEach(function (t) { t.hT = 0; });
+        if (!open) setOpen(true);
+        drag.x = e.clientX;
+        dx = 0;
+        drag.s0 = sT;
+      }
+      if (!drag.moved) return;
+      var tn = performance.now();
+      if (tn > drag.lt) { drag.vx = drag.vx * 0.6 + ((e.clientX - drag.lx) / (tn - drag.lt)) * 0.4; }
+      drag.lx = e.clientX;
+      drag.lt = tn;
+      sT = clamp(drag.s0 - dx / stepPx(), -0.35, vis.length - 0.65);
+      sync();
+      kick();
+    });
+    function endDrag(e) {
+      if (!drag || (e && e.pointerId !== drag.id)) return;
+      var d = drag;
+      drag = null;
+      stage.classList.remove('is-drag');
+      if (d.moved) {
+        // let it carry on a little in the direction it was thrown, then settle on a tile
+        var fling = performance.now() - d.lt < 90 ? -d.vx * 220 / stepPx() : 0;
+        sT = clamp(Math.round(sT + clamp(fling, -4, 4)), 0, vis.length - 1);
+        sync();
+        kick();
+        return;
+      }
+      if (e && e.type === 'pointercancel') return;
+      if (d.tile) {
+        var tl = tiles.filter(function (t) { return t.el === d.tile; })[0];
+        if (tl && tl.vT) { if (open && tl.i === cur) return; choose(tl.i); }
+      } else if (open) setOpen(false);
+    }
+    stage.addEventListener('pointerup', endDrag);
+    stage.addEventListener('pointercancel', endDrag);
+    stage.addEventListener('pointerleave', function (e) {
+      if (e.pointerType !== 'mouse') return;
+      tiles.forEach(function (t) { t.hT = 0; });
+      kick();
+    });
+
+    // the wheel or a trackpad: a notch of a mouse wheel is one tile; a trackpad goes smoothly and settles on a tile
+    var wheelT = 0, wheelHold = 0, notchAt = 0;
+    window.addEventListener('wheel', function (e) {
+      if (e.ctrlKey) return;
+      if (panel.contains(e.target) && panel.scrollHeight > panel.clientHeight + 2) return;
+      if (H.root && H.root.contains(e.target)) return;
+      e.preventDefault();
+      if (!ready) return;
+      var d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (e.deltaMode === 1) d *= 33;
+      else if (e.deltaMode === 2) d *= vh;
+      var tn = performance.now();
+      if (!open) { setOpen(true); wheelHold = tn + 380; return; }
+      if (tn < wheelHold) return;
+      if (Math.abs(d) >= 60 && Math.abs(d - Math.round(d)) < 0.01 && e.deltaMode === 0 || e.deltaMode > 0) {
+        if (tn - notchAt < 90) return;
+        notchAt = tn;
+        sT = clamp(Math.round(sT) + (d > 0 ? 1 : -1), 0, vis.length - 1);
+      } else {
+        sT = clamp(sT + d / 260, -0.3, vis.length - 0.7);
+        clearTimeout(wheelT);
+        wheelT = setTimeout(function () { sT = clamp(Math.round(sT), 0, vis.length - 1); sync(); kick(); }, 140);
+      }
+      sync();
+      kick();
+    }, { passive: false });
+
+    document.addEventListener('keydown', function (e) {
+      if (!ready || e.altKey || e.metaKey || e.ctrlKey) return;
+      var tag = (e.target && e.target.tagName) || '';
+      if (/INPUT|TEXTAREA|SELECT/.test(tag)) return;
+      var k = e.key;
+      if (k === 'ArrowRight' || k === 'ArrowDown') { e.preventDefault(); go(1); }
+      else if (k === 'ArrowLeft' || k === 'ArrowUp') { e.preventDefault(); go(-1); }
+      else if (k === 'Home' && open) { e.preventDefault(); sT = 0; sync(); kick(); }
+      else if (k === 'End' && open) { e.preventDefault(); sT = vis.length - 1; sync(); kick(); }
+      else if (k === 'Escape' && open) setOpen(false);
+      else if ((k === 'Enter' || k === ' ') && !open && !(e.target && e.target.closest && e.target.closest('button,a'))) { e.preventDefault(); setOpen(true); }
+    });
+
+    var rzT = 0;
+    window.addEventListener('resize', function () {
+      cancelAnimationFrame(rzT);
+      rzT = requestAnimationFrame(function () { measure(); tiles.forEach(function (t) { t.tf = ''; }); kick(); });
+    });
+
+    measure();
+    if (reduce) arrived();
+    requestAnimationFrame(function (tn) {
+      t0 = tn;
+      last = 0;
+      kick();
+    });
+  }
+
+  // the archive's chairs: Collection 01's Classic leads to its classic view (the chairs script still marks it
+  // "coming soon", so its tag is put right each time it is drawn)
+  function classicLinks() {
+    var ways = {};
+    NAV.forEach(function (it) {
+      (it.sub || []).forEach(function (s) { if (s.ways && s.ways.classic) ways[s.label.toLowerCase()] = s.ways.classic; });
+    });
+    if (!Object.keys(ways).length || !('MutationObserver' in window)) return;
+    var busy = false;
+    function fix() {
+      busy = false;
+      [].forEach.call(document.querySelectorAll('.chair-tag .way.is-soon,.chair-caption .way.is-soon'), function (w) {
+        if (!/^\s*classic/i.test(w.textContent)) return;
+        var tag = w.closest('.chair-tag,.chair-caption');
+        var name = tag && tag.querySelector('.name');
+        var href = name && ways[name.textContent.trim().toLowerCase()];
+        if (!href) return;
+        var a = document.createElement('a');
+        a.className = w.className.replace(/\s*is-soon\b/, '');
+        a.href = href;
+        a.textContent = 'Classic';
+        w.parentNode.replaceChild(a, w);
+      });
+    }
+    new MutationObserver(function () {
+      if (busy) return;
+      busy = true;
+      requestAnimationFrame(fix);
+    }).observe(document.body, { childList: true, subtree: true });
+    fix();
+  }
+
   function start() {
     if (IS.home) home();
     buildHeader();
     if (IS.shop) shop();
     if (IS.looks) looksOrbit();
+    if (IS.classic) classic();
+    if (IS.arch) classicLinks();
     checkoutButton();
     // the reminder: one still waiting is put straight back; otherwise the next is set
     var due = nudgePlan();
