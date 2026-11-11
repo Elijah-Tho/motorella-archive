@@ -1733,7 +1733,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.0/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.1/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
@@ -2209,11 +2209,12 @@
   window.MotorellaNudge = function () { nudge(); };
 
   // ------------------------------------------------------------------------------------------------ classic view
-  // A collection's classic view (/motorella-classic-01): its campaign pictures as tiles standing in a row in depth,
-  // like files in a drawer. On arrival they fade in out of a blur around a ring, then swoop off it one after another
-  // into the row, in order. Scrolling, dragging, the arrow keys or a click go through them: the chosen one comes
-  // forward and turns to face you, and a box beside it (under it on a phone) says what it is. For a look: what is
-  // being worn. For an image: what it shows.
+  // A collection's classic view (/motorella-classic-01): its campaign pictures as tiles standing in a level row, all
+  // turned the same way, like files in a drawer. On arrival they appear in order around a turning ring, which opens
+  // and straightens into the row. Scrolling, dragging, the arrow keys or a click go through them: the chosen one
+  // steps out and turns to face you, and a box beside it (under it on a phone) says what it is: for a look, what is
+  // worn; for an image, what it shows. Clicking the chosen one again brings it to the middle, large, with everything
+  // else blurred behind it.
   //
   // In Webflow the pictures are ordinary elements on the page, so swapping one in is just Replace image:
   //   .mc-source                (hidden on the live page)
@@ -2232,49 +2233,42 @@
   var MC_CSS = [
     'html.mc-on,html.mc-on body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:#eeeeef}',
     '.mc-source{display:none!important}',
-    // the room the tiles stand in
-    '.mc-stage{position:fixed;inset:0;z-index:1;overflow:hidden;perspective:1700px;perspective-origin:50% 50%;touch-action:none;',
-    '  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;cursor:grab}',
-    '.mc-stage.is-drag{cursor:grabbing}',
+    // the room the tiles stand in. No perspective: every tile is drawn the same, slanted by the same amount, the way
+    // a drawing in parallel projection keeps its lines parallel
+    '.mc-stage{position:fixed;inset:0;z-index:1;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}',
+    '.mc-stage.is-drag,.mc-stage.is-drag .mc-tile{cursor:grabbing}',
     '.mc-tile{position:absolute;left:50%;top:50%;transform-origin:50% 50%;will-change:transform,opacity;cursor:pointer;opacity:0;outline:none}',
+    '.mc-tile.is-cur{cursor:zoom-in}',
     '.mc-face{position:absolute;inset:0;overflow:hidden;background:var(--mc-shade,#8a8a8d);',
-    '  box-shadow:0 30px 46px -26px rgba(0,0,0,.38),0 1px 4px rgba(0,0,0,.07)}',
+    '  box-shadow:0 26px 40px -24px rgba(0,0,0,.34),0 1px 3px rgba(0,0,0,.06)}',
     // a faint sheen, as if the light came from the top left
     '.mc-face::after{content:"";position:absolute;inset:0;pointer-events:none;',
-    '  background:linear-gradient(155deg,rgba(255,255,255,.17) 0%,rgba(255,255,255,0) 40%,rgba(0,0,0,0) 72%,rgba(0,0,0,.1) 100%)}',
+    '  background:linear-gradient(155deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,0) 40%,rgba(0,0,0,0) 72%,rgba(0,0,0,.09) 100%)}',
     '.mc-face img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .6s ease;',
     '  -webkit-user-drag:none;pointer-events:none}',
     '.mc-face img.is-in{opacity:1}',
-    '.mc-tile:focus-visible .mc-face{box-shadow:0 0 0 1px rgba(74,74,77,.6),0 30px 46px -26px rgba(0,0,0,.38)}',
-    // its number on the floor under it
-    '.mc-no{position:absolute;right:0;top:calc(100% + 14px);display:flex;align-items:center;gap:7px;white-space:nowrap;pointer-events:none;',
+    '.mc-tile:focus-visible .mc-face{box-shadow:0 0 0 1px rgba(74,74,77,.6),0 26px 40px -24px rgba(0,0,0,.34)}',
+    // its number on the floor, under its near edge
+    '.mc-no{position:absolute;right:0;top:calc(100% + 13px);display:flex;align-items:center;gap:7px;white-space:nowrap;pointer-events:none;',
     '  font:700 8px/1 ' + MCF + ';letter-spacing:.2em;color:rgba(74,74,77,.5)}',
-    '.mc-no::after{content:"";width:14px;height:1px;background:currentColor}',
-    // the words around it: the collection and its two views (top left), the filters (bottom right), a hint
+    '.mc-no::after{content:"";width:12px;height:1px;background:currentColor}',
+    '.mc-no{transition:none}',
+    // the words around it: the collection (top left) and the filters (bottom right)
     '.mc-ui{position:fixed;inset:0;z-index:5;pointer-events:none;font-family:' + MCF + ';color:#4a4a4d;-webkit-font-smoothing:antialiased}',
-    '.mc-head{position:absolute;left:var(--mh-pad,40px);top:calc(var(--mh-row,64px) + 26px);display:flex;flex-direction:column;gap:9px;',
-    '  opacity:0;filter:blur(6px);transition:opacity .8s ease,filter .8s ease}',
+    '.mc-head{position:absolute;left:var(--mh-pad,40px);top:calc(var(--mh-row,64px) + 26px);opacity:0;filter:blur(6px);transition:opacity .8s ease,filter .8s ease}',
     '.mc-name{font-size:11px;line-height:1;font-weight:700;letter-spacing:.16em;text-transform:uppercase}',
     '.mc-name sup,.mc-filter sup{font-size:7px;line-height:1;letter-spacing:.04em;margin-left:3px;vertical-align:top;position:relative;top:-2px}',
     '.mc-name sup{color:rgba(74,74,77,.55)}',
-    '.mc-ways{display:flex;gap:14px;pointer-events:auto}',
-    '.mc-way{font-size:10px;line-height:14px;letter-spacing:.1em;text-transform:uppercase;color:rgba(74,74,77,.5);text-decoration:none;transition:color .25s ease}',
-    'a.mc-way:hover{color:#4a4a4d}',
-    '.mc-way.is-here{color:#4a4a4d;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}',
     '.mc-filters{position:absolute;right:var(--mh-pad,40px);bottom:calc(30px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;',
     '  align-items:flex-end;gap:5px;pointer-events:auto;opacity:0;filter:blur(6px);transition:opacity .8s ease,filter .8s ease}',
     '.mc-filter{font:700 10px/1 ' + MCF + ';letter-spacing:.14em;text-transform:uppercase;color:rgba(74,74,77,.42);background:none;border:0;',
     '  padding:4px 0;margin:0;cursor:pointer;transition:color .25s ease;-webkit-tap-highlight-color:transparent}',
     '.mc-filter:hover,.mc-filter.is-on{color:#4a4a4d}',
-    '.mc-filter:focus-visible,.mc-way:focus-visible,.mc-p button:focus-visible{outline:1px solid currentColor;outline-offset:3px}',
+    '.mc-filter:focus-visible,.mc-p button:focus-visible{outline:1px solid currentColor;outline-offset:3px}',
     'html.mc-ready .mc-head,html.mc-ready .mc-filters{opacity:1;filter:none}',
-    '.mc-hint{position:absolute;left:50%;bottom:calc(32px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);white-space:nowrap;',
-    '  font-size:9px;line-height:1;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:rgba(74,74,77,.5);',
-    '  opacity:0;filter:blur(6px);transition:opacity .7s ease,filter .7s ease}',
-    '.mc-hint.is-on{opacity:1;filter:none}',
     // the box about the chosen picture: the dark frosted glass of the cart and the product box. (Its blur grows from
     // nothing as it appears rather than fading in whole: iPhones only draw a fading blur once the fade has ended.)
-    '.mc-panel{position:fixed;z-index:6;top:53%;right:max(var(--mh-pad,40px),calc(50vw - 660px));width:300px;box-sizing:border-box;',
+    '.mc-panel{position:fixed;z-index:6;top:52.5%;right:max(var(--mh-pad,40px),calc(50vw - 660px));width:300px;box-sizing:border-box;',
     '  max-height:calc(100vh - var(--mh-row,64px) - 64px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;',
     '  color:#fff;font-family:' + MCF + ';-webkit-font-smoothing:antialiased;transform:translate(16px,-50%);visibility:hidden;pointer-events:none;',
     '  background:rgba(14,14,17,0);-webkit-backdrop-filter:blur(0px) saturate(1);backdrop-filter:blur(0px) saturate(1);',
@@ -2310,14 +2304,23 @@
     '@media (any-hover:hover){.mc-p-nav button:hover{background:rgba(14,14,17,.5)}}',
     '.mc-p-nav button:active{background:rgba(14,14,17,.5)}',
     '.mc-p-nav button:disabled{opacity:.32;cursor:default;background:rgba(255,255,255,.14)}',
+    // the close view: the chosen picture large in the middle, everything else blurred behind it
+    '.mc-veil{position:fixed;inset:0;z-index:1150;visibility:hidden;pointer-events:none;background:rgba(238,238,239,0);',
+    '  -webkit-backdrop-filter:blur(0px);backdrop-filter:blur(0px)}',
+    '.mc-view{position:fixed;inset:0;z-index:1160;visibility:hidden;pointer-events:none;cursor:zoom-out;touch-action:none;-webkit-tap-highlight-color:transparent}',
+    '.mc-vtile{position:absolute;left:50%;top:50%;transform-origin:50% 50%;will-change:transform}',
+    '.mc-vtile .mc-face{transition:opacity .18s ease;box-shadow:0 46px 80px -36px rgba(0,0,0,.4),0 2px 8px rgba(0,0,0,.07)}',
+    '.mc-vtile.is-swap .mc-face{opacity:0}',
+    '.mc-vcap{position:absolute;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);white-space:nowrap;',
+    '  font:700 9px/1 ' + MCF + ';letter-spacing:.22em;text-transform:uppercase;color:#4a4a4d;opacity:0;filter:blur(5px);transition:opacity .35s ease,filter .35s ease}',
+    'html.mc-viewing .mc-vcap{opacity:1;filter:none;transition-delay:.18s}',
     // phones: the box sits at the foot of the screen, the chosen tile above it; the filters go under the name
     '@media (max-width:' + NARROW + 'px){',
-    '  .mc-head{top:calc(var(--mh-row,58px) + 14px);gap:8px}',
-    '  .mc-filters{left:var(--mh-pad,20px);right:auto;top:calc(var(--mh-row,58px) + 62px);bottom:auto;flex-direction:row;gap:16px}',
+    '  .mc-head{top:calc(var(--mh-row,58px) + 14px)}',
+    '  .mc-filters{left:var(--mh-pad,20px);right:auto;top:calc(var(--mh-row,58px) + 40px);bottom:auto;flex-direction:row;gap:16px}',
     '  html.mc-open .mc-filters{opacity:0;filter:blur(6px);pointer-events:none}',
-    '  .mc-hint{bottom:calc(40px + env(safe-area-inset-bottom,0px))}',
     '  .mc-panel{left:12px;right:12px;width:auto;top:auto;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateY(22px);',
-    '    max-height:46vh;max-height:46svh}',
+    '    max-height:44vh;max-height:44svh}',
     '  .mc-panel.is-on{transform:none}',
     '  .mc-p-in{padding:13px 14px 2px}',
     '  .mc-p-top{margin-bottom:12px}',
@@ -2374,7 +2377,6 @@
     var src = document.querySelector('.mc-source');
     var conf = MC_PAGES[path] || {};
     var cname = (src && src.getAttribute('data-collection')) || conf.name || 'Collection';
-    var legacy = (src && src.getAttribute('data-legacy')) || conf.legacy || '';
     var ratio = parseFloat(((src && src.getAttribute('data-ratio')) || '').replace(/^(\d+(?:\.\d+)?)\s*[:/x]\s*(\d+(?:\.\d+)?)$/, function (m, a, b) { return String(a / b); })) || 0.8;
     var items = classicItems(src);
     var n = items.length;
@@ -2385,6 +2387,8 @@
     de.classList.add('mc-on');
     var reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
     var RAD = Math.PI / 180;
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function easeOut3(t) { return 1 - Math.pow(1 - t, 3); }
 
     // names: LOOK 01 … and IMAGE 01 … in order, unless one is given
     var nk = { look: 0, image: 0 };
@@ -2393,32 +2397,37 @@
       it.name = blank(it.title) ? (it.kind === 'look' ? 'Look ' : 'Image ') + pad2(it.no) : it.title;
     });
 
-    // ---- the tiles
-    var stage = el('div', 'mc-stage', document.body);
-    stage.setAttribute('role', 'listbox');
-    stage.setAttribute('aria-label', cname + ', classic');
-    var tiles = items.map(function (it, i) {
-      var t = el('div', 'mc-tile', stage);
-      t.setAttribute('role', 'option');
-      t.setAttribute('aria-label', it.name);
-      t.tabIndex = -1;
-      var face = el('div', 'mc-face', t);
-      // stand-ins: from a light black to a light grey along the row
-      var g = n > 1 ? i / (n - 1) : 0;
-      var c = Math.round(46 + g * 156);
+    // a picture's face: the photograph, or (until there is one) a grey from light black to light grey along the row
+    function faceFor(i, sizes) {
+      var it = items[i];
+      var face = el('div', 'mc-face');
+      var c = Math.round(46 + (n > 1 ? i / (n - 1) : 0) * 156);
       face.style.setProperty('--mc-shade', 'rgb(' + c + ',' + c + ',' + (c + 3) + ')');
       if (it.src) {
         var im = el('img', '', face);
         im.alt = it.alt || it.name;
         im.decoding = 'async';
         im.draggable = false;
-        if (it.srcset) { im.setAttribute('srcset', it.srcset); im.setAttribute('sizes', '(max-width: 760px) 300px, 460px'); }
+        if (it.srcset) { im.setAttribute('srcset', it.srcset); im.setAttribute('sizes', sizes); }
         im.onload = function () { im.classList.add('is-in'); };
         im.src = it.src;
         if (im.complete && im.naturalWidth) im.classList.add('is-in');
       }
-      el('div', 'mc-no', t, pad2(i + 1));
-      return { el: t, i: i, r: i, rT: i, v: 1, vT: 1, h: 0, hT: 0, fb: '', tf: '', o: '', zi: '', pe: '' };
+      return face;
+    }
+
+    // ---- the tiles
+    var stage = el('div', 'mc-stage', document.body);
+    stage.setAttribute('role', 'listbox');
+    stage.setAttribute('aria-label', cname);
+    var tiles = items.map(function (it, i) {
+      var t = el('div', 'mc-tile', stage);
+      t.setAttribute('role', 'option');
+      t.setAttribute('aria-label', it.name);
+      t.tabIndex = -1;
+      t.appendChild(faceFor(i, '(max-width: 760px) 240px, 340px'));
+      var no = el('div', 'mc-no', t, pad2(i + 1));
+      return { el: t, no: no, i: i, r: i, rT: i, v: 1, vT: 1, h: 0, hT: 0, tf: '', o: '', fb: '', zi: '', pe: '', lo: '' };
     });
 
     // ---- the words around them
@@ -2426,9 +2435,6 @@
     var head = el('div', 'mc-head', ui);
     var nm = el('div', 'mc-name', head, cname);
     el('sup', '', nm, String(n));
-    var ways = el('div', 'mc-ways', head);
-    el('span', 'mc-way is-here', ways, 'Classic').setAttribute('aria-current', 'page');
-    if (legacy) { var lg = el('a', 'mc-way', ways, 'Legacy'); lg.href = legacy; }
     var counts = { all: n, look: nk.look, image: nk.image };
     var filters = el('div', 'mc-filters', ui);
     var fBtns = {};
@@ -2442,7 +2448,6 @@
         fBtns[f[0]] = b;
       });
     }
-    var hint = el('div', 'mc-hint', ui, (window.matchMedia && matchMedia('(hover: none)').matches) ? 'Swipe or tap a picture' : 'Scroll or select a picture');
 
     // ---- the box
     var panel = el('aside', 'mc-panel', document.body);
@@ -2464,9 +2469,9 @@
     nextB.addEventListener('click', function () { go(1); });
 
     function sec(label) {
-      var s = el('div', 'mc-p-sec', pbody);
-      el('div', 'mc-p-label', s, label);
-      return s;
+      var s1 = el('div', 'mc-p-sec', pbody);
+      el('div', 'mc-p-label', s1, label);
+      return s1;
     }
     function fill(i) {
       var it = items[i];
@@ -2487,15 +2492,14 @@
       var dl = el('dl', 'mc-p-rows', sec('Credits'));
       var cr = it.credit.length ? it.credit : (it.kind === 'look' ? ['Photography: Empty', 'Model: Empty'] : ['Photography: Empty', 'Location: Empty']);
       cr.forEach(function (c) {
-        var m = /^([^:]{1,28}):\s*(.*)$/.exec(c);
-        el('dt', '', dl, m ? m[1] : '—');
-        el('dd', '', dl, m ? (m[2] || 'Empty') : c);
+        var mm = /^([^:]{1,28}):\s*(.*)$/.exec(c);
+        el('dt', '', dl, mm ? mm[1] : '—');
+        el('dd', '', dl, mm ? (mm[2] || 'Empty') : c);
       });
       var r = vis.indexOf(i);
       pidx.textContent = pad2(r + 1) + ' / ' + pad2(vis.length);
       prevB.disabled = r <= 0;
       nextB.disabled = r >= vis.length - 1;
-      tiles.forEach(function (t) { t.el.setAttribute('aria-selected', t.i === i ? 'true' : 'false'); });
     }
     var shown = -1, swapT = 0;
     function showInfo(i, now) {
@@ -2505,6 +2509,35 @@
       if (now || !panel.classList.contains('is-on')) { pbody.classList.remove('is-swap'); fill(i); return; }
       pbody.classList.add('is-swap');
       swapT = setTimeout(function () { fill(shown); pbody.classList.remove('is-swap'); }, 160);
+    }
+
+    // ---- the close view: the chosen picture brought to the middle, large, everything else blurred behind it
+    var veil = el('div', 'mc-veil', document.body);
+    var view = el('div', 'mc-view', document.body);
+    var vtile = el('div', 'mc-vtile', view);
+    var vcap = el('div', 'mc-vcap', view);
+    var vOn = false, vv = 0, vvT = 0, vItem = -1, vSwapT = 0, VW = 0, VH = 0;
+    function viewFill(i) {
+      vItem = i;
+      vtile.innerHTML = '';
+      vtile.appendChild(faceFor(i, '(max-width: 760px) 92vw, 72vh'));
+      var r = vis.indexOf(i);
+      vcap.textContent = items[i].name + '\u2003\u2003' + pad2(r + 1) + ' / ' + pad2(vis.length);
+    }
+    function setView(on) {
+      if (on === vOn || !ready || (on && !open)) return;
+      vOn = on;
+      vvT = on ? 1 : 0;
+      if (on) { clearTimeout(vSwapT); vtile.classList.remove('is-swap'); viewFill(cur); }
+      de.classList.toggle('mc-viewing', on);
+      view.style.pointerEvents = on ? 'auto' : 'none';
+      kick();
+    }
+    function viewSwap(i) {
+      clearTimeout(vSwapT);
+      vtile.classList.add('is-swap');
+      vSwapT = setTimeout(function () { viewFill(cur); vtile.classList.remove('is-swap'); }, 180);
+      vItem = i;
     }
 
     // ---- state
@@ -2521,14 +2554,13 @@
     }
     computeVis();
 
-    var vw = 0, vh = 0, phone = false, TW = 0, TH = 0, focusX = 0, A0 = 58, TILT = -12;
+    var vw = 0, vh = 0, phone = false, TW = 0, TH = 0, focusX = 0, A0 = 58, TILT = -12, ringR = 0;
     function measure() {
       vw = window.innerWidth;
       vh = window.innerHeight;
       phone = vw <= NARROW;
-      A0 = phone ? 62 : 58;
-      TILT = phone ? -9 : -12;
-      TH = phone ? Math.min(vh * 0.36, 310, (vw - 110) / ratio) : clamp(vh * 0.46, 240, 520);
+      TILT = phone ? -10 : -12;
+      TH = phone ? Math.min(vh * 0.32, 270, (vw - 130) / ratio) : clamp(vh * 0.4, 220, 430);
       TW = TH * ratio;
       tiles.forEach(function (t) {
         var s1 = t.el.style;
@@ -2537,58 +2569,72 @@
         s1.marginLeft = (-TW / 2).toFixed(1) + 'px';
         s1.marginTop = (-TH / 2).toFixed(1) + 'px';
       });
-      stage.style.perspective = (phone ? 1150 : 1700) + 'px';
+      // the close view's picture: as large as fits, drawn at that size so it stays sharp
+      VH = Math.min(vh * (phone ? 0.66 : 0.78), (vw * (phone ? 0.86 : 0.9)) / ratio);
+      VW = VH * ratio;
+      var vs = vtile.style;
+      vs.width = VW.toFixed(1) + 'px';
+      vs.height = VH.toFixed(1) + 'px';
+      vs.marginLeft = (-VW / 2).toFixed(1) + 'px';
+      vs.marginTop = (-VH / 2).toFixed(1) + 'px';
+      ringR = phone ? Math.min(TH * 0.55, vw * 0.33) : TH * 0.6;
       if (phone) focusX = 0;
       else {
         // the chosen tile stands in the middle of the room left beside the box
-        var right = Math.max(phone ? 20 : 40, vw / 2 - 660);
-        var pw = panel.offsetWidth || 300;
-        focusX = (vw - right - pw) / 2 - vw / 2 - 12;
+        var right = Math.max(40, vw / 2 - 660);
+        focusX = (vw - right - (panel.offsetWidth || 300)) / 2 - vw / 2 - 12;
       }
     }
 
-    // where a tile at rank r rests: in the row (closed) or around the chosen one (open)
-    var P1 = {}, P2 = {};
+    // where a tile at rank r rests: in the row (closed), or around the chosen one (open). Every tile turned by the
+    // same angle, the row level, the tiles evenly spaced
+    var P1 = {}, PA = {}, PB = {};
     function rest(r, out) {
       var nv = Math.max(1, vis.length);
       var cosA = Math.cos(A0 * RAD);
-      var Sc = clamp((vw * (phone ? 0.92 : 0.74) - TW * cosA) / Math.max(1, nv - 1), TW * (phone ? 0.085 : 0.13), TW * 0.34);
-      var half = (vw * (phone ? 0.46 : 0.42) - TW * cosA / 2) / Sc;
+      var Sc = TW * (phone ? 0.1 : 0.15);
+      var half = (vw * (phone ? 0.92 : 0.86) / 2 - TW * cosA / 2) / Sc;
       var mid = (nv - 1) / 2;
       var p = half >= mid ? mid : clamp(s, half, nv - 1 - half);
-      var xc = Sc * (r - p) - TW * (phone ? 0.07 : 0.13);
+      var xc = Sc * (r - p);
       var d = r - s;
-      var So = TW * (phone ? 0.1 : 0.13), G = TW * (phone ? 0.62 : 0.74);
+      var So = TW * (phone ? 0.09 : 0.11), G = TW * (phone ? 0.84 : 0.86);
       var xo = focusX + So * d + G * Math.tanh(d * 1.5);
-      var e = Math.exp(-d * d * 2.4);
+      var e = Math.exp(-d * d * 2.6);
       var mm = easeIO(clamp(m, 0, 1));
       out.x = xc + (xo - xc) * mm;
-      out.y = phone ? -vh * (0.025 + 0.135 * mm) : vh * 0.03;
-      out.z = mm * TW * (0.42 * e - 0.14 * (1 - e));
-      out.a = -(A0 - mm * (A0 - 4) * e);
+      out.y = phone ? -vh * (0.02 + 0.14 * mm) : vh * 0.025;
+      out.a = -A0 * (1 - mm * e);
+      out.sc = 1 + mm * e * (phone ? 0.04 : 0.1);
       out.f = mm * e;
     }
-    // the arrival: a ring of tiles fading in out of a blur in order, which then swoop off it into the row in order
+    // the arrival. The tiles appear one after another, out of a blur, facing you, small, around a turning ring; the
+    // ring slows, opens at its foot and straightens into the row, the tiles growing to size and turning together
     var t0 = 0, intro = !reduce;
-    function arrive(t, r, nv, fin, out) {
-      var stA = Math.min(0.055, 0.8 / nv), stL = Math.min(0.055, 0.95 / nv), fly = 1.05;
-      var ap = r * stA, lv = 0.55 + nv * stA * 0.55 + r * stL;
-      var R = phone ? Math.min(vw * 0.25, vh * 0.17) : Math.min(vh * 0.27, vw * 0.19);
-      var ph = -Math.PI / 2 + (r / nv) * Math.PI * 2 + t * 1.15;
-      var rx = Math.cos(ph) * R * 1.15, ry = Math.sin(ph) * R * 0.92 + fin.y, rz = -TW * 0.45 + Math.sin(ph) * R * 0.3;
-      var q = easeIO(clamp((t - lv) / fly, 0, 1));
-      var arc = Math.sin(Math.PI * q);
-      out.x = rx + (fin.x - rx) * q;
-      out.y = ry + (fin.y - ry) * q - arc * TH * 0.14;
-      out.z = rz + (fin.z - rz) * q + arc * TW * 0.55;
-      var ra = -A0 * 0.3;
-      out.a = ra + (fin.a - ra) * q;
-      var rz0 = ((ph / RAD + 90) % 360 + 540) % 360 - 180;
-      out.rz = rz0 * 0.42 * (1 - q);
-      out.sc = (phone ? 0.46 : 0.56) + (phone ? 0.54 : 0.44) * q;
-      out.op = smooth(ap, ap + 0.42, t);
-      out.blur = (1 - smooth(ap, ap + 0.8, t)) * (phone ? 9 : 14);
-      out.done = t >= lv + fly;
+    var T_OPEN = 0.62, T_DUR = 1.45, T_SPIN = 1.05;
+    function arrive(t, r, nv, out) {
+      var stg = Math.min(0.045, 0.55 / nv), ap = r * stg;
+      out.op = smooth(ap, ap + 0.5, t);
+      out.blur = (1 - smooth(ap, ap + 0.7, t)) * (phone ? 8 : 12);
+      var q = easeIO(clamp((t - T_OPEN) / T_DUR, 0, 1));
+      var psi = -0.9 * (1 - easeOut3(clamp(t / T_SPIN, 0, 1)));
+      var cx = (PA.x + PB.x) / 2, line = PB.x - PA.x, yl = PA.y;
+      var ring = 2 * Math.PI * ringR * (nv - 1) / nv;
+      var len = lerp(ring, line, q);
+      var al = 2 * Math.PI * (nv - 1) / nv * (1 - q);
+      var sa = (nv > 1 ? r / (nv - 1) - 0.5 : 0) * len;
+      var top = yl - ringR * (1 - q);
+      if (al > 1e-3) {
+        var rad = len / al, phi = sa / rad + psi;
+        out.x = cx + rad * Math.sin(phi);
+        out.y = top + rad - rad * Math.cos(phi);
+      } else {
+        out.x = cx + sa;
+        out.y = top;
+      }
+      out.a = -A0 * q;
+      out.sc = lerp(phone ? 0.46 : 0.44, 1, q);
+      out.done = t >= T_OPEN + T_DUR;
     }
 
     var raf = 0, last = 0;
@@ -2600,11 +2646,13 @@
       var dt = last ? Math.min(0.05, (now - last) / 1000) : 0.016;
       last = now;
       var busy = false;
-      var k1 = 1 - Math.exp(-dt * 9), k2 = 1 - Math.exp(-dt * 6.5), k3 = 1 - Math.exp(-dt * 12), k4 = 1 - Math.exp(-dt * 7);
+      var k1 = 1 - Math.exp(-dt * 8.5), k2 = 1 - Math.exp(-dt * 6), k3 = 1 - Math.exp(-dt * 11), k4 = 1 - Math.exp(-dt * 7);
       if (Math.abs(sT - s) > 0.0006) { s += (sT - s) * k1; busy = true; } else s = sT;
       if (Math.abs(mT - m) > 0.0008) { m += (mT - m) * k2; busy = true; } else m = mT;
+      if (Math.abs(vvT - vv) > 0.001) { vv += (vvT - vv) * k2; busy = true; } else vv = vvT;
       var nv = Math.max(1, vis.length);
       var t = (now - t0) / 1000;
+      if (intro) { rest(0, PA); rest(nv - 1, PB); }
       var done = true;
       for (var i = 0; i < tiles.length; i++) {
         var tl = tiles[i];
@@ -2612,29 +2660,49 @@
         if (Math.abs(tl.vT - tl.v) > 0.002) { tl.v += (tl.vT - tl.v) * k4; busy = true; } else tl.v = tl.vT;
         if (Math.abs(tl.hT - tl.h) > 0.002) { tl.h += (tl.hT - tl.h) * k3; busy = true; } else tl.h = tl.hT;
         rest(tl.r, P1);
-        var x = P1.x, y = P1.y, z = P1.z, a = P1.a, rz = 0, sc = 0.9 + 0.1 * tl.v, op = tl.v, bl = (1 - tl.v) * 8;
-        // a pointer over a tile lifts it a little out of the row, like a file pulled up out of a drawer
-        var lift = tl.h * (1 - P1.f);
-        y -= lift * TH * (0.06 - 0.025 * m);
-        a += lift * 7;
-        z += lift * 12;
+        var x = P1.x, y = P1.y, a = P1.a, sc = P1.sc * (0.92 + 0.08 * tl.v), op = tl.v, bl = (1 - tl.v) * 8;
+        // a pointer over a tile lifts it a little out of the row, like a file pulled up from a drawer
+        y -= tl.h * (1 - P1.f) * TH * (0.055 - 0.02 * m);
         if (intro) {
-          arrive(t, tl.r, nv, { x: x, y: y, z: z, a: a }, P2);
-          x = P2.x; y = P2.y; z = P2.z; a = P2.a; rz = P2.rz; sc *= P2.sc; op *= P2.op; bl = Math.max(bl, P2.blur);
-          if (!P2.done) done = false;
+          arrive(t, tl.r, nv, P1);
+          x = P1.x; y = P1.y; a = P1.a; sc = P1.sc; op = P1.op; bl = P1.blur;
+          if (!P1.done) done = false;
+          P1.f = 0;
         }
-        var tf = 'rotateX(' + TILT + 'deg) translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,' + z.toFixed(1) + 'px) rotateZ(' +
-          rz.toFixed(2) + 'deg) rotateY(' + a.toFixed(2) + 'deg) scale(' + sc.toFixed(4) + ')';
+        // (the one in the close view stands in for it)
+        if (vv > 0.002 && tl.i === vItem) op = 0;
+        var tf = 'rotateX(' + TILT + 'deg) translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0) rotateY(' + a.toFixed(2) + 'deg) scale(' + sc.toFixed(4) + ')';
         if (tf !== tl.tf) { tl.el.style.transform = tf; tl.tf = tf; }
         var o = op.toFixed(3);
         if (o !== tl.o) { tl.el.style.opacity = o; tl.o = o; }
         var fb = bl > 0.2 ? 'blur(' + bl.toFixed(1) + 'px)' : 'none';
         if (fb !== tl.fb) { tl.el.style.filter = fb; tl.fb = fb; }
         // in front: the chosen one, then (in the row) each tile over the one after it
-        var zi = String(5000 + Math.round(z / (TW * 0.4) * (nv * 10 + 30)) - Math.round(tl.r * 10));
+        var zi = String(5000 + Math.round(Math.max(0, P1.f - 0.3) / 0.7 * (nv * 10 + 30)) - Math.round(tl.r * 10));
         if (zi !== tl.zi) { tl.el.style.zIndex = zi; tl.zi = zi; }
         var pe = tl.v < 0.5 ? 'none' : '';
         if (pe !== tl.pe) { tl.el.style.pointerEvents = pe; tl.pe = pe; }
+        // the numbers on the floor: under the row while it rests; once one is chosen, only under that one (on a
+        // phone the row is too tight for them, so there only under the chosen one)
+        var mm2 = easeIO(clamp(m, 0, 1));
+        var lo = (phone ? P1.f : (1 - mm2) + mm2 * P1.f).toFixed(2);
+        if (lo !== tl.lo) { tl.no.style.opacity = lo; tl.lo = lo; }
+      }
+      // the close view: from where the chosen tile stands to the middle, turning to face you as it comes
+      if (vv > 0.002 || vvT) {
+        var vt = tiles[vItem];
+        rest(vt ? vt.r : 0, P1);
+        var e = easeIO(clamp(vv, 0, 1));
+        var ty = phone ? 10 : 22;
+        var vsc = lerp(P1.sc * TW / VW, 1, e);
+        vtile.style.transform = 'rotateX(' + (TILT * (1 - e)).toFixed(2) + 'deg) translate3d(' + lerp(P1.x, 0, e).toFixed(1) + 'px,' +
+          lerp(P1.y, ty, e).toFixed(1) + 'px,0) rotateY(' + (P1.a * (1 - e)).toFixed(2) + 'deg) scale(' + vsc.toFixed(4) + ')';
+        var b = (18 * e).toFixed(1);
+        veil.style.webkitBackdropFilter = veil.style.backdropFilter = 'blur(' + b + 'px)';
+        veil.style.backgroundColor = 'rgba(238,238,239,' + (0.38 * e).toFixed(3) + ')';
+        veil.style.visibility = view.style.visibility = 'visible';
+      } else if (view.style.visibility !== 'hidden') {
+        veil.style.visibility = view.style.visibility = 'hidden';
       }
       if (intro && done) { intro = false; arrived(); }
       if (busy || intro) kick();
@@ -2642,20 +2710,33 @@
 
     // ---- going through them
     function active() { return vis[clamp(Math.round(sT), 0, vis.length - 1)]; }
+    function markCur() {
+      tiles.forEach(function (t) {
+        var on = open && t.i === cur;
+        t.el.classList.toggle('is-cur', on);
+        t.el.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+    }
     function sync() {
       var a = active();
       if (a == null) return;
-      if (a !== cur) { cur = a; if (open) showInfo(a); }
+      if (a !== cur) {
+        cur = a;
+        if (open) showInfo(a);
+        if (vOn) viewSwap(a);
+        markCur();
+      }
     }
     function setOpen(on) {
       if (on === open || !ready) return;
+      if (!on && vOn) setView(false);
       open = on;
       mT = on ? 1 : 0;
       if (on) { sT = clamp(Math.round(sT), 0, vis.length - 1); cur = active(); showInfo(cur, true); }
       de.classList.toggle('mc-open', on);
       panel.classList.toggle('is-on', on);
-      hintOff();
       tiles.forEach(function (t) { t.hT = 0; });
+      markCur();
       kick();
     }
     function go(dir) {
@@ -2695,27 +2776,19 @@
       cur = vis[r];
       shown = -1;
       if (open) showInfo(cur);
-      pnudge();
+      markCur();
       kick();
     }
-    function pnudge() {
-      if (!open) return;
-      var r = vis.indexOf(cur);
-      pidx.textContent = pad2(r + 1) + ' / ' + pad2(vis.length);
-    }
-
-    var hintT = 0;
-    function hintOff() { clearTimeout(hintT); hint.classList.remove('is-on'); }
     function arrived() {
       ready = true;
       de.classList.add('mc-ready');
       tiles.forEach(function (t) { t.el.style.filter = 'none'; t.fb = 'none'; });
-      hintT = setTimeout(function () { if (!open) hint.classList.add('is-on'); }, 500);
     }
 
-    // pointer: drag sideways to go through, tap or click a tile to choose it, tap the room to go back to the row
+    // pointer: drag sideways to go through, tap or click a tile to choose it (the chosen one again: the close view),
+    // tap the room to go back to the row
     var drag = null;
-    function stepPx() { return TW * (phone ? 0.1 + 0.62 * 0.9 : 0.13 + 0.74 * 0.9); }
+    function stepPx() { return TW * (phone ? 0.09 + 0.84 * 0.9 : 0.11 + 0.86 * 0.9); }
     stage.addEventListener('pointerdown', function (e) {
       if (!ready || (e.pointerType === 'mouse' && e.button !== 0)) return;
       drag = { x: e.clientX, y: e.clientY, s0: sT, moved: false, id: e.pointerId, tile: e.target.closest ? e.target.closest('.mc-tile') : null,
@@ -2743,7 +2816,7 @@
       }
       if (!drag.moved) return;
       var tn = performance.now();
-      if (tn > drag.lt) { drag.vx = drag.vx * 0.6 + ((e.clientX - drag.lx) / (tn - drag.lt)) * 0.4; }
+      if (tn > drag.lt) drag.vx = drag.vx * 0.6 + ((e.clientX - drag.lx) / (tn - drag.lt)) * 0.4;
       drag.lx = e.clientX;
       drag.lt = tn;
       sT = clamp(drag.s0 - dx / stepPx(), -0.35, vis.length - 0.65);
@@ -2766,7 +2839,9 @@
       if (e && e.type === 'pointercancel') return;
       if (d.tile) {
         var tl = tiles.filter(function (t) { return t.el === d.tile; })[0];
-        if (tl && tl.vT) { if (open && tl.i === cur) return; choose(tl.i); }
+        if (!tl || !tl.vT) return;
+        if (open && tl.i === cur) setView(true);
+        else choose(tl.i);
       } else if (open) setOpen(false);
     }
     stage.addEventListener('pointerup', endDrag);
@@ -2776,6 +2851,17 @@
       tiles.forEach(function (t) { t.hT = 0; });
       kick();
     });
+    // the close view: a tap or click anywhere puts the picture back; a swipe goes to the next or the one before
+    var vdrag = null;
+    view.addEventListener('pointerdown', function (e) { vdrag = { x: e.clientX, y: e.clientY, id: e.pointerId }; });
+    view.addEventListener('pointerup', function (e) {
+      if (!vdrag || e.pointerId !== vdrag.id) return;
+      var dx = e.clientX - vdrag.x, dy = e.clientY - vdrag.y;
+      vdrag = null;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
+      else setView(false);
+    });
+    view.addEventListener('pointercancel', function () { vdrag = null; });
 
     // the wheel or a trackpad: a notch of a mouse wheel is one tile; a trackpad goes smoothly and settles on a tile
     var wheelT = 0, wheelHold = 0, notchAt = 0;
@@ -2791,8 +2877,9 @@
       var tn = performance.now();
       if (!open) { setOpen(true); wheelHold = tn + 380; return; }
       if (tn < wheelHold) return;
-      if (Math.abs(d) >= 60 && Math.abs(d - Math.round(d)) < 0.01 && e.deltaMode === 0 || e.deltaMode > 0) {
-        if (tn - notchAt < 90) return;
+      if (vOn || (Math.abs(d) >= 60 && Math.abs(d - Math.round(d)) < 0.01 && e.deltaMode === 0) || e.deltaMode > 0) {
+        // (in the close view, one picture at a time)
+        if (Math.abs(d) < 4 || tn - notchAt < (vOn ? 320 : 90)) return;
         notchAt = tn;
         sT = clamp(Math.round(sT) + (d > 0 ? 1 : -1), 0, vis.length - 1);
       } else {
@@ -2808,13 +2895,17 @@
       if (!ready || e.altKey || e.metaKey || e.ctrlKey) return;
       var tag = (e.target && e.target.tagName) || '';
       if (/INPUT|TEXTAREA|SELECT/.test(tag)) return;
-      var k = e.key;
+      var k = e.key, onBtn = !!(e.target && e.target.closest && e.target.closest('button,a'));
       if (k === 'ArrowRight' || k === 'ArrowDown') { e.preventDefault(); go(1); }
       else if (k === 'ArrowLeft' || k === 'ArrowUp') { e.preventDefault(); go(-1); }
       else if (k === 'Home' && open) { e.preventDefault(); sT = 0; sync(); kick(); }
       else if (k === 'End' && open) { e.preventDefault(); sT = vis.length - 1; sync(); kick(); }
-      else if (k === 'Escape' && open) setOpen(false);
-      else if ((k === 'Enter' || k === ' ') && !open && !(e.target && e.target.closest && e.target.closest('button,a'))) { e.preventDefault(); setOpen(true); }
+      else if (k === 'Escape') { if (vOn) setView(false); else if (open) setOpen(false); }
+      else if ((k === 'Enter' || k === ' ') && !onBtn) {
+        e.preventDefault();
+        if (!open) setOpen(true);
+        else setView(!vOn);
+      }
     });
 
     var rzT = 0;
