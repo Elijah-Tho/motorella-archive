@@ -1733,7 +1733,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.1/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.2/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
@@ -2210,8 +2210,8 @@
 
   // ------------------------------------------------------------------------------------------------ classic view
   // A collection's classic view (/motorella-classic-01): its campaign pictures as tiles standing in a level row, all
-  // turned the same way, like files in a drawer. On arrival they appear in order around a turning ring, which opens
-  // and straightens into the row. Scrolling, dragging, the arrow keys or a click go through them: the chosen one
+  // turned the same way, like files in a drawer. On arrival they appear in order around a turning ring; then one by
+  // one, left to right, each swoops off it and settles into its place in the row. Scrolling, dragging, the arrow keys or a click go through them: the chosen one
   // steps out and turns to face you, and a box beside it (under it on a phone) says what it is: for a look, what is
   // worn; for an image, what it shows. Clicking the chosen one again brings it to the middle, large, with everything
   // else blurred behind it.
@@ -2238,16 +2238,12 @@
     '.mc-stage{position:fixed;inset:0;z-index:1;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}',
     '.mc-stage.is-drag,.mc-stage.is-drag .mc-tile{cursor:grabbing}',
     '.mc-tile{position:absolute;left:50%;top:50%;transform-origin:50% 50%;will-change:transform,opacity;cursor:pointer;opacity:0;outline:none}',
-    '.mc-tile.is-cur{cursor:zoom-in}',
-    '.mc-face{position:absolute;inset:0;overflow:hidden;background:var(--mc-shade,#8a8a8d);',
-    '  box-shadow:0 26px 40px -24px rgba(0,0,0,.34),0 1px 3px rgba(0,0,0,.06)}',
-    // a faint sheen, as if the light came from the top left
-    '.mc-face::after{content:"";position:absolute;inset:0;pointer-events:none;',
-    '  background:linear-gradient(155deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,0) 40%,rgba(0,0,0,0) 72%,rgba(0,0,0,.09) 100%)}',
+    // flat: just the colour (or the picture), no sheen, no shadow
+    '.mc-face{position:absolute;inset:0;overflow:hidden;background:var(--mc-shade,#8a8a8d)}',
     '.mc-face img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .6s ease;',
     '  -webkit-user-drag:none;pointer-events:none}',
     '.mc-face img.is-in{opacity:1}',
-    '.mc-tile:focus-visible .mc-face{box-shadow:0 0 0 1px rgba(74,74,77,.6),0 26px 40px -24px rgba(0,0,0,.34)}',
+    '.mc-tile:focus-visible .mc-face{outline:1px solid rgba(74,74,77,.6);outline-offset:3px}',
     // its number on the floor, under its near edge
     '.mc-no{position:absolute;right:0;top:calc(100% + 13px);display:flex;align-items:center;gap:7px;white-space:nowrap;pointer-events:none;',
     '  font:700 8px/1 ' + MCF + ';letter-spacing:.2em;color:rgba(74,74,77,.5)}',
@@ -2304,12 +2300,13 @@
     '@media (any-hover:hover){.mc-p-nav button:hover{background:rgba(14,14,17,.5)}}',
     '.mc-p-nav button:active{background:rgba(14,14,17,.5)}',
     '.mc-p-nav button:disabled{opacity:.32;cursor:default;background:rgba(255,255,255,.14)}',
-    // the close view: the chosen picture large in the middle, everything else blurred behind it
-    '.mc-veil{position:fixed;inset:0;z-index:1150;visibility:hidden;pointer-events:none;background:rgba(238,238,239,0);',
+    // the close view: the chosen picture large in the middle, the page blurred behind it (under the header, which
+    // stays sharp and usable)
+    '.mc-veil{position:fixed;inset:0;z-index:900;visibility:hidden;pointer-events:none;background:rgba(238,238,239,0);',
     '  -webkit-backdrop-filter:blur(0px);backdrop-filter:blur(0px)}',
-    '.mc-view{position:fixed;inset:0;z-index:1160;visibility:hidden;pointer-events:none;cursor:zoom-out;touch-action:none;-webkit-tap-highlight-color:transparent}',
+    '.mc-view{position:fixed;inset:0;z-index:910;visibility:hidden;pointer-events:none;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent}',
     '.mc-vtile{position:absolute;left:50%;top:50%;transform-origin:50% 50%;will-change:transform}',
-    '.mc-vtile .mc-face{transition:opacity .18s ease;box-shadow:0 46px 80px -36px rgba(0,0,0,.4),0 2px 8px rgba(0,0,0,.07)}',
+    '.mc-vtile .mc-face{transition:opacity .18s ease}',
     '.mc-vtile.is-swap .mc-face{opacity:0}',
     '.mc-vcap{position:absolute;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);white-space:nowrap;',
     '  font:700 9px/1 ' + MCF + ';letter-spacing:.22em;text-transform:uppercase;color:#4a4a4d;opacity:0;filter:blur(5px);transition:opacity .35s ease,filter .35s ease}',
@@ -2528,6 +2525,7 @@
       if (on === vOn || !ready || (on && !open)) return;
       vOn = on;
       vvT = on ? 1 : 0;
+      vTw = { f: vv, t0: -1, d: 0.6, p: 0 };
       if (on) { clearTimeout(vSwapT); vtile.classList.remove('is-swap'); viewFill(cur); }
       de.classList.toggle('mc-viewing', on);
       view.style.pointerEvents = on ? 'auto' : 'none';
@@ -2543,6 +2541,7 @@
     // ---- state
     var filter = 'all', vis = [];
     var s = 0, sT = 0, m = 0, mT = 0, open = false, cur = 0, ready = false;
+    var mTw = { f: 0, t0: 0, d: 1, p: 1 }, vTw = { f: 0, t0: 0, d: 1, p: 1 };
     function computeVis() {
       vis = [];
       items.forEach(function (it, i) { if (filter === 'all' || it.kind === filter) vis.push(i); });
@@ -2577,7 +2576,7 @@
       vs.height = VH.toFixed(1) + 'px';
       vs.marginLeft = (-VW / 2).toFixed(1) + 'px';
       vs.marginTop = (-VH / 2).toFixed(1) + 'px';
-      ringR = phone ? Math.min(TH * 0.55, vw * 0.33) : TH * 0.6;
+      ringR = phone ? Math.min(TH * 0.6, vw * 0.32) : TH * 0.7;
       if (phone) focusX = 0;
       else {
         // the chosen tile stands in the middle of the room left beside the box
@@ -2601,40 +2600,61 @@
       var So = TW * (phone ? 0.09 : 0.11), G = TW * (phone ? 0.84 : 0.86);
       var xo = focusX + So * d + G * Math.tanh(d * 1.5);
       var e = Math.exp(-d * d * 2.6);
-      var mm = easeIO(clamp(m, 0, 1));
+      var mm = clamp(m, 0, 1);
       out.x = xc + (xo - xc) * mm;
       out.y = phone ? -vh * (0.02 + 0.14 * mm) : vh * 0.025;
       out.a = -A0 * (1 - mm * e);
       out.sc = 1 + mm * e * (phone ? 0.04 : 0.1);
       out.f = mm * e;
     }
-    // the arrival. The tiles appear one after another, out of a blur, facing you, small, around a turning ring; the
-    // ring slows, opens at its foot and straightens into the row, the tiles growing to size and turning together
-    var t0 = 0, intro = !reduce;
-    var T_OPEN = 0.62, T_DUR = 1.45, T_SPIN = 1.05;
-    function arrive(t, r, nv, out) {
-      var stg = Math.min(0.045, 0.55 / nv), ap = r * stg;
-      out.op = smooth(ap, ap + 0.5, t);
-      out.blur = (1 - smooth(ap, ap + 0.7, t)) * (phone ? 8 : 12);
-      var q = easeIO(clamp((t - T_OPEN) / T_DUR, 0, 1));
-      var psi = -0.9 * (1 - easeOut3(clamp(t / T_SPIN, 0, 1)));
-      var cx = (PA.x + PB.x) / 2, line = PB.x - PA.x, yl = PA.y;
-      var ring = 2 * Math.PI * ringR * (nv - 1) / nv;
-      var len = lerp(ring, line, q);
-      var al = 2 * Math.PI * (nv - 1) / nv * (1 - q);
-      var sa = (nv > 1 ? r / (nv - 1) - 0.5 : 0) * len;
-      var top = yl - ringR * (1 - q);
-      if (al > 1e-3) {
-        var rad = len / al, phi = sa / rad + psi;
-        out.x = cx + rad * Math.sin(phi);
-        out.y = top + rad - rad * Math.cos(phi);
+    // the arrival. The tiles appear one after another around a ring, out of a blur, small and facing you, as the
+    // ring turns and slows to a stop. Then, from left to right, each one swoops off the ring (flung on along the
+    // ring's turn) and settles into its place in the row, growing to size and turning to the row's angle as it lands.
+    var t0 = 0, intro = !reduce, plan = null;
+    var T_LEAVE = 0.78, T_FLY = 0.86;
+    function planRing(nv) {
+      // the ring's places run clockwise from its right; the tiles take them by their order from left to right
+      // (upper before lower), so each one has only a short way to drop or rise into the row and no paths cross
+      var ks = [];
+      for (var k = 0; k < nv; k++) ks.push(k);
+      ks.sort(function (p, q) {
+        var cp = Math.cos(2 * Math.PI * p / nv), cq = Math.cos(2 * Math.PI * q / nv);
+        if (Math.abs(cp - cq) > 1e-6) return cp - cq;
+        return Math.sin(2 * Math.PI * p / nv) - Math.sin(2 * Math.PI * q / nv);
+      });
+      return { nv: nv, k: ks };
+    }
+    function spin(t) { return -0.7 * (1 - easeOut3(clamp(t / 0.95, 0, 1))); }
+    function arrive(t, r, fin, out) {
+      var nv = plan.nv, k = plan.k[Math.round(r)] || 0;
+      var stg = Math.min(0.035, 0.45 / nv), ap = k * stg;
+      out.op = smooth(ap, ap + 0.42, t);
+      out.blur = (1 - smooth(ap, ap + 0.6, t)) * (phone ? 8 : 11);
+      var cx = (PA.x + PB.x) / 2, cy = PA.y, R = ringR;
+      var gap = Math.min(0.085, 1 / Math.max(1, nv - 1));
+      var dep = T_LEAVE + r * gap, s0 = phone ? 0.42 : 0.4;
+      var th = 2 * Math.PI * k / nv + spin(Math.min(t, dep));
+      var x0 = cx + R * Math.cos(th), y0 = cy + R * Math.sin(th);
+      var tau = clamp((t - dep) / T_FLY, 0, 1);
+      // (its number shows once it has landed)
+      out.lab = smooth(0.75, 1, tau);
+      if (tau <= 0) {
+        out.x = x0; out.y = y0; out.a = 0; out.sc = s0;
       } else {
-        out.x = cx + sa;
-        out.y = top;
+        // a curve: out of the ring and on along its turn, then round into the place, the last of it a gentle
+        // drop (or rise) straight into the row
+        var x1 = x0 + Math.cos(th) * R * 0.22 - Math.sin(th) * R * 0.32;
+        var y1 = y0 + Math.sin(th) * R * 0.22 + Math.cos(th) * R * 0.32;
+        var x3 = fin.x, y3 = fin.y;
+        var x2 = x3 + (x1 - x3) * 0.22, y2 = y3 + (y1 - y3) * 0.55;
+        var u = easeIO(tau), w = 1 - u;
+        var b0 = w * w * w, b1 = 3 * w * w * u, b2 = 3 * w * u * u, b3 = u * u * u;
+        out.x = b0 * x0 + b1 * x1 + b2 * x2 + b3 * x3;
+        out.y = b0 * y0 + b1 * y1 + b2 * y2 + b3 * y3;
+        out.a = fin.a * u;
+        out.sc = lerp(s0, fin.sc, u);
       }
-      out.a = -A0 * q;
-      out.sc = lerp(phone ? 0.46 : 0.44, 1, q);
-      out.done = t >= T_OPEN + T_DUR;
+      out.done = t >= T_LEAVE + (nv - 1) * gap + T_FLY;
     }
 
     var raf = 0, last = 0;
@@ -2648,11 +2668,21 @@
       var busy = false;
       var k1 = 1 - Math.exp(-dt * 8.5), k2 = 1 - Math.exp(-dt * 6), k3 = 1 - Math.exp(-dt * 11), k4 = 1 - Math.exp(-dt * 7);
       if (Math.abs(sT - s) > 0.0006) { s += (sT - s) * k1; busy = true; } else s = sT;
-      if (Math.abs(mT - m) > 0.0008) { m += (mT - m) * k2; busy = true; } else m = mT;
-      if (Math.abs(vvT - vv) > 0.001) { vv += (vvT - vv) * k2; busy = true; } else vv = vvT;
+      if (mTw.p < 1) {
+        if (mTw.t0 < 0) mTw.t0 = now;
+        mTw.p = clamp((now - mTw.t0) / 1000 / mTw.d, 0, 1);
+        m = mTw.f + (mT - mTw.f) * easeIO(mTw.p);
+        busy = true;
+      }
+      if (vTw.p < 1) {
+        if (vTw.t0 < 0) vTw.t0 = now;
+        vTw.p = clamp((now - vTw.t0) / 1000 / vTw.d, 0, 1);
+        vv = vTw.f + (vvT - vTw.f) * easeIO(vTw.p);
+        busy = true;
+      }
       var nv = Math.max(1, vis.length);
       var t = (now - t0) / 1000;
-      if (intro) { rest(0, PA); rest(nv - 1, PB); }
+      if (intro) { rest(0, PA); rest(nv - 1, PB); if (!plan || plan.nv !== nv) plan = planRing(nv); }
       var done = true;
       for (var i = 0; i < tiles.length; i++) {
         var tl = tiles[i];
@@ -2664,7 +2694,7 @@
         // a pointer over a tile lifts it a little out of the row, like a file pulled up from a drawer
         y -= tl.h * (1 - P1.f) * TH * (0.055 - 0.02 * m);
         if (intro) {
-          arrive(t, tl.r, nv, P1);
+          arrive(t, tl.r, { x: x, y: y, a: a, sc: sc }, P1);
           x = P1.x; y = P1.y; a = P1.a; sc = P1.sc; op = P1.op; bl = P1.blur;
           if (!P1.done) done = false;
           P1.f = 0;
@@ -2684,20 +2714,20 @@
         if (pe !== tl.pe) { tl.el.style.pointerEvents = pe; tl.pe = pe; }
         // the numbers on the floor: under the row while it rests; once one is chosen, only under that one (on a
         // phone the row is too tight for them, so there only under the chosen one)
-        var mm2 = easeIO(clamp(m, 0, 1));
-        var lo = (phone ? P1.f : (1 - mm2) + mm2 * P1.f).toFixed(2);
+        var mm2 = clamp(m, 0, 1);
+        var lo = (intro ? (phone ? 0 : P1.lab) : phone ? P1.f : (1 - mm2) + mm2 * P1.f).toFixed(2);
         if (lo !== tl.lo) { tl.no.style.opacity = lo; tl.lo = lo; }
       }
       // the close view: from where the chosen tile stands to the middle, turning to face you as it comes
       if (vv > 0.002 || vvT) {
         var vt = tiles[vItem];
         rest(vt ? vt.r : 0, P1);
-        var e = easeIO(clamp(vv, 0, 1));
+        var e = clamp(vv, 0, 1);
         var ty = phone ? 10 : 22;
         var vsc = lerp(P1.sc * TW / VW, 1, e);
         vtile.style.transform = 'rotateX(' + (TILT * (1 - e)).toFixed(2) + 'deg) translate3d(' + lerp(P1.x, 0, e).toFixed(1) + 'px,' +
           lerp(P1.y, ty, e).toFixed(1) + 'px,0) rotateY(' + (P1.a * (1 - e)).toFixed(2) + 'deg) scale(' + vsc.toFixed(4) + ')';
-        var b = (18 * e).toFixed(1);
+        var b = (16 * e).toFixed(1);
         veil.style.webkitBackdropFilter = veil.style.backdropFilter = 'blur(' + b + 'px)';
         veil.style.backgroundColor = 'rgba(238,238,239,' + (0.38 * e).toFixed(3) + ')';
         veil.style.visibility = view.style.visibility = 'visible';
@@ -2732,6 +2762,7 @@
       if (!on && vOn) setView(false);
       open = on;
       mT = on ? 1 : 0;
+      mTw = { f: m, t0: -1, d: 0.72, p: 0 };
       if (on) { sT = clamp(Math.round(sT), 0, vis.length - 1); cur = active(); showInfo(cur, true); }
       de.classList.toggle('mc-open', on);
       panel.classList.toggle('is-on', on);
