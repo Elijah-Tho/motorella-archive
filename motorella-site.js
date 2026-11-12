@@ -1733,7 +1733,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.6/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.7/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
@@ -2252,7 +2252,8 @@
     '.mc-no{transition:none}',
     // the words around it: the collection (top left) and the filters (bottom right)
     '.mc-ui{position:fixed;inset:0;z-index:5;pointer-events:none;font-family:' + MCF + ';color:#4a4a4d;-webkit-font-smoothing:antialiased}',
-    '.mc-head{position:absolute;left:var(--mh-pad,40px);top:calc(var(--mh-row,64px) + 26px);opacity:0;filter:blur(6px);transition:opacity .8s ease,filter .8s ease}',
+    // (the collection's name shows from the start; only the filters wait for the tiles to arrive)
+    '.mc-head{position:absolute;left:var(--mh-pad,40px);top:calc(var(--mh-row,64px) + 26px)}',
     '.mc-name{font-size:11px;line-height:1;font-weight:700;letter-spacing:.16em;text-transform:uppercase}',
     '.mc-name sup,.mc-filter sup{font-size:7px;line-height:1;letter-spacing:.04em;margin-left:3px;vertical-align:top;position:relative;top:-2px}',
     '.mc-name sup{color:rgba(74,74,77,.55)}',
@@ -2262,7 +2263,7 @@
     '  padding:4px 0;margin:0;cursor:pointer;transition:color .25s ease;-webkit-tap-highlight-color:transparent}',
     '.mc-filter:hover,.mc-filter.is-on{color:#4a4a4d}',
     '.mc-filter:focus-visible,.mc-p button:focus-visible{outline:1px solid currentColor;outline-offset:3px}',
-    'html.mc-ready .mc-head,html.mc-ready .mc-filters{opacity:1;filter:none}',
+    'html.mc-ready .mc-filters{opacity:1;filter:none}',
     // the box about the chosen picture: the dark frosted glass of the cart and the product box. (Its blur grows from
     // nothing as it appears rather than fading in whole: iPhones only draw a fading blur once the fade has ended.)
     '.mc-panel{position:fixed;z-index:6;top:52.5%;right:max(var(--mh-pad,40px),calc(50vw - 660px));width:300px;box-sizing:border-box;',
