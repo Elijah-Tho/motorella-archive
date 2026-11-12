@@ -1733,7 +1733,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.3/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.4/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
@@ -2210,8 +2210,8 @@
 
   // ------------------------------------------------------------------------------------------------ classic view
   // A collection's classic view (/motorella-classic-01): its campaign pictures as tiles standing in a level row, all
-  // turned the same way, like files in a drawer. On arrival they come out single file around a loop, drawing it as
-  // they go, and run on out of its foot into the row, each gliding to a stop in its place. Scrolling, dragging, the arrow keys or a click go through them: the chosen one
+  // turned the same way, like files in a drawer. On arrival they come out single file from the lower middle of a loop
+  // above the row, spiral once round it, drawing it as they go, and drop out beneath it into their places. Scrolling, dragging, the arrow keys or a click go through them: the chosen one
   // steps out and turns to face you, and a box beside it (under it on a phone) says what it is: for a look, what is
   // worn; for an image, what it shows. Clicking the chosen one again brings it to the middle, large, with everything
   // else blurred behind it.
@@ -2607,49 +2607,47 @@
       out.sc = 1 + mm * e * (phone ? 0.04 : 0.1);
       out.f = mm * e;
     }
-    // the arrival, one unbroken movement. The tiles come out one after another, in order, from a point inside a loop,
-    // small and out of a blur. They follow each other single file around the loop, drawing it as they go, and on out
-    // of its foot into the row, growing to size and turning to the row's angle, each gliding to a stop in its place.
-    // (The loop sits over the row's right end; its foot meets the row there, so the path runs into it and along it.)
+    // the arrival, one unbroken movement. The tiles come out one after another, in order, at the bottom middle of a
+    // circle above the row, small and out of a blur. Single file, they go once round it clockwise, drawing the full
+    // circle, and widen a little as they come round, so they pass just beneath where they started; there the path dips
+    // down out of the circle's foot, and each tile in turn swoops down and out to its place in the row and rises gently
+    // into it, growing to size and turning to the row's angle as it comes.
     var t0 = 0, intro = !reduce, loop = null;
-    var T_RUN = 1.75;
-    function buildPath(xR, yR, nv) {
-      var sl = phone ? 0.26 : 0.3;
-      var hw = sl * TW / 2, hh = sl * TH / 2;
-      var R0 = TH * (phone ? 0.42 : 0.55);
-      // the turn down into the row: as wide as the screen's right edge allows
-      var r2 = Math.max(R0 * 0.3, Math.min(R0 * 0.8, vw / 2 - 14 - hw - xR));
-      var hr = H.root && H.root.querySelector('.mh-row');
-      var top = (hr ? hr.offsetHeight : 64) + 12 - vh / 2;
-      var R = Math.max(R0 * 0.5, Math.min(R0, yR - r2 - hh - top));
-      var cx = xR - R + r2, cy = yR - r2, r0 = R * 0.28;
-      var pts = [], L = 0, px = 0, py = 0, sTop = 0;
-      // the loop: a spiral, clockwise, from a point inside it near its foot, widening to full size by the top
-      var NS = 180, kTop = NS * 2 / 3;
+    // the tiles move as one train: the same pace for all, spaced so that the whole train fills the loop just as its
+    // first tile reaches the foot (the full circle), then pours out of it one by one
+    var T_ACC = 0.35;
+    function trainAt(t, v) { return t < T_ACC ? v * t * t / (2 * T_ACC) : v * (t - T_ACC / 2); }
+    function trainTime(h, v) { var hA = v * T_ACC / 2; return h < hA ? Math.sqrt(2 * T_ACC * Math.max(0, h) / v) : h / v + T_ACC / 2; }
+    function buildPath(yR, nv) {
+      var R = TH * 0.36, r0 = R * 0.62, rq = TH * 0.15;
+      // the loop's middle a little right of centre and its way out a little left, so the two sit either side of it
+      var cx = rq / 2, cy = yR - TH * 0.6;
+      var pts = [], L = 0, px = 0, py = 0;
+      var NS = 220;
       for (var k = 0; k <= NS; k++) {
-        var th = (k / NS) * 1.5 * Math.PI;
-        var rho = r0 + (R - r0) * smooth(0, Math.PI, th);
+        var th = (k / NS) * 2 * Math.PI;
+        var rho = r0 + (R - r0) * smooth(0, 2 * Math.PI, th);
         var x = cx - rho * Math.sin(th), y = cy + rho * Math.cos(th);
         if (k) L += Math.hypot(x - px, y - py);
-        if (k === kTop) sTop = L;
         pts.push([x, y, L]);
         px = x; py = y;
       }
-      var sRight = L;
-      // its right side turning down and round into the row, which it meets at the row's right end
-      for (var j = 1; j <= 40; j++) {
-        var ph = (j / 40) * Math.PI / 2;
-        var x2 = cx + R - r2 + r2 * Math.cos(ph), y2 = cy + r2 * Math.sin(ph);
+      // beneath the loop, a short turn from heading left to heading down
+      var qy = cy + R + rq;
+      for (var j = 1; j <= 30; j++) {
+        var ph = (j / 30) * Math.PI / 2;
+        var x2 = cx - rq * Math.sin(ph), y2 = qy - rq * Math.cos(ph);
         L += Math.hypot(x2 - px, y2 - py);
         pts.push([x2, y2, L]);
         px = x2; py = y2;
       }
-      return { pts: pts, L: L, xB: xR, yB: yR, sTop: sTop, sRight: sRight, sl: sl, nv: nv };
+      var a = TH * 0.22, v = L / 0.8;
+      return { pts: pts, L: L, ex: px, ey: py, yR: yR, a: a, b: TH * 0.18, v: v, g: L / Math.max(1, nv), tf: 9 * a / v, nv: nv };
     }
     function along(sp, out) {
       var p = loop;
-      if (sp >= p.L) { out.x = p.xB - (sp - p.L); out.y = p.yB; return; }
       if (sp <= 0) { out.x = p.pts[0][0]; out.y = p.pts[0][1]; return; }
+      if (sp >= p.L) { out.x = p.ex; out.y = p.ey; return; }
       var lo = 0, hi = p.pts.length - 1;
       while (hi - lo > 1) { var md = (lo + hi) >> 1; if (p.pts[md][2] < sp) lo = md; else hi = md; }
       var A = p.pts[lo], B = p.pts[hi], f = (sp - A[2]) / ((B[2] - A[2]) || 1);
@@ -2657,21 +2655,32 @@
       out.y = A[1] + (B[1] - A[1]) * f;
     }
     function arrive(t, r, fin, out) {
-      var nv = loop.nv;
-      var gap = Math.min(0.075, 0.9 / Math.max(1, nv - 1));
-      var ts = r * gap, tau = clamp((t - ts) / T_RUN, 0, 1);
-      // how far along the path: off from rest quickly, then a long, soft slowing into its place
-      var D = loop.L + (loop.xB - fin.x);
-      var sp = D * (1 - Math.pow(1 - tau, 3) * (1 + 3 * tau));
-      along(sp, out);
-      // its size and turn follow where it is on the path, so every tile passes each point the same way
-      var base = lerp(phone ? 0.18 : 0.2, loop.sl, smooth(0, loop.sTop, sp));
-      out.sc = lerp(base, fin.sc, smooth(loop.sTop, loop.L, sp));
-      out.a = fin.a * smooth(loop.sRight - 0.3 * (loop.sRight - loop.sTop), loop.L, sp);
-      out.op = smooth(ts, ts + 0.3, t);
-      out.blur = (1 - smooth(ts, ts + 0.5, t)) * (phone ? 7 : 10);
-      out.lab = smooth(0.9, 1, tau);
-      out.done = t >= (nv - 1) * gap + T_RUN;
+      var p = loop, nv = p.nv, v = p.v;
+      var s0 = phone ? 0.18 : 0.2, sl = phone ? 0.28 : 0.3, sE = sl + 0.04;
+      var h = trainAt(t, v) - r * p.g;
+      var te = trainTime(r * p.g, v);
+      out.op = smooth(te, te + 0.2, t);
+      out.blur = (1 - smooth(te, te + 0.4, t)) * (phone ? 7 : 10);
+      if (h < p.L) {
+        // round the loop
+        var sp = Math.max(0, h);
+        along(sp, out);
+        out.sc = lerp(s0, sl, smooth(0, p.L * 0.35, sp)) + (sE - sl) * smooth(p.L * 0.75, p.L, sp);
+        out.a = 0;
+        out.lab = 0;
+      } else {
+        // out of the loop's foot: on down at the same pace, out to its place and up into it, slowing to a stop
+        var t2 = clamp((t - trainTime(p.L + r * p.g, v)) / p.tf, 0, 1);
+        var u = 1 - Math.pow(1 - t2, 3), w = 1 - u;
+        var x0 = p.ex, y0 = p.ey, y1 = p.ey + p.a, x3 = fin.x, y3 = fin.y, y2 = fin.y + p.b;
+        var b0 = w * w * w, b1 = 3 * w * w * u, b2 = 3 * w * u * u, b3 = u * u * u;
+        out.x = (b0 + b1) * x0 + (b2 + b3) * x3;
+        out.y = b0 * y0 + b1 * y1 + b2 * y2 + b3 * y3;
+        out.sc = lerp(sE, fin.sc, smooth(0, 1, u));
+        out.a = fin.a * smooth(0.1, 1, u);
+        out.lab = smooth(0.85, 1, t2);
+      }
+      out.done = t >= trainTime(p.L + (nv - 1) * p.g, v) + p.tf;
     }
 
     var raf = 0, last = 0;
@@ -2699,7 +2708,7 @@
       }
       var nv = Math.max(1, vis.length);
       var t = (now - t0) / 1000;
-      if (intro) { rest(0, PA); rest(nv - 1, PB); if (!loop || loop.nv !== nv) loop = buildPath(PB.x, PB.y, nv); }
+      if (intro) { rest(0, PA); rest(nv - 1, PB); if (!loop || loop.nv !== nv) loop = buildPath(PB.y, nv); }
       var done = true;
       for (var i = 0; i < tiles.length; i++) {
         var tl = tiles[i];
