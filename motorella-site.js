@@ -1741,7 +1741,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.9/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.10/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
@@ -2755,7 +2755,8 @@
             }
             if (!phone && ad > 0.2) vfb = 'blur(' + (5 * smooth(0.2, 1, ad)).toFixed(1) + 'px)';
           }
-          var vo = vop.toFixed(3), vvis = vop > 0.003 ? 'visible' : 'hidden';
+          // (shown by inheriting from the view, never by forcing 'visible', so the pictures go when the view goes)
+          var vo = vop.toFixed(3), vvis = vop > 0.003 ? '' : 'hidden';
           if (vvis !== ve.__v) { ve.style.visibility = vvis; ve.__v = vvis; }
           if (vvis === 'hidden') continue;
           if (vo !== ve.__o) { ve.style.opacity = vo; ve.__o = vo; }
