@@ -363,7 +363,7 @@
     '#motorella-cart .cart-decorative-plus img{filter:invert(1);opacity:.6}',
     // (the panel stacks its contents, so Checkout sits at the foot when there is room and comes after the last item
     // when the cart is long enough to scroll)
-    '#motorella-cart{display:flex!important;flex-direction:column}',
+    '#motorella-cart{display:flex!important;flex-direction:column;overscroll-behavior:contain}',
     '#motorella-cart > *{flex-shrink:0}',
     '#motorella-cart .cart-decorative-plus{margin-bottom:16px}',
     '#motorella-cart .mh-checkout{position:static;flex:none;width:100%;margin:auto 0 0;height:44px;padding:0 16px;border:0;border-radius:0;cursor:pointer;',
@@ -580,8 +580,8 @@
         var rm = el('button', 'cart-item-remove', info, 'REMOVE');
         rm.setAttribute('data-remove-id', it.cartId || '');
       });
-      panel.style.overflowY = 'hidden';
       panel.style.height = Math.max(276, 32 + items.scrollHeight + 100) + 'px';
+      fit();
       deco.classList.toggle('is-empty', cart.length === 0);
       box.innerHTML = '';
       cart.forEach(function (it) {
@@ -593,6 +593,13 @@
       plus.src = PLUS;
       plus.alt = '';
     }
+    // a cart taller than the panel may grow (80% of the screen; 60% on a phone) scrolls inside it, as the shop's does
+    function fit() {
+      var want = parseFloat(panel.style.height) || 0;
+      var most = parseFloat(getComputedStyle(panel).maxHeight) || Infinity;
+      panel.style.overflowY = want > most + 1 ? 'auto' : 'hidden';
+    }
+    window.addEventListener('resize', fit);
     document.addEventListener('click', function (e) {
       if (e.target.closest('[data-cart-toggle]')) {
         e.preventDefault();
@@ -601,6 +608,7 @@
           var r = box.getBoundingClientRect();
           panel.style.top = r.bottom + 8 + 'px';
           panel.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
+          fit();
         }
         panel.classList.toggle('is-open', opening);
         return;
@@ -1733,7 +1741,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.7/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.8/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
