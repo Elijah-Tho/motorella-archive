@@ -1741,7 +1741,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.8/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.9/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
@@ -2315,12 +2315,12 @@
     '.mc-veil{position:fixed;inset:0;z-index:900;visibility:hidden;pointer-events:none;background:rgba(238,238,239,0);',
     '  -webkit-backdrop-filter:blur(0px);backdrop-filter:blur(0px)}',
     '.mc-view{position:fixed;inset:0;z-index:910;visibility:hidden;pointer-events:none;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent}',
-    '.mc-vtile{position:absolute;left:50%;top:50%;transform-origin:50% 50%;will-change:transform}',
-    '.mc-vtile .mc-face{transition:opacity .18s ease}',
-    '.mc-vtile.is-swap .mc-face{opacity:0}',
-    '.mc-vcap{position:absolute;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);white-space:nowrap;',
+    '.mc-vtile{position:absolute;left:50%;top:50%;transform-origin:50% 50%;will-change:transform,opacity;-webkit-backface-visibility:hidden;backface-visibility:hidden}',
+    '.mc-view.is-drag{cursor:grabbing}',
+    '.mc-vcap{position:absolute;z-index:40;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);white-space:nowrap;',
     '  font:700 9px/1 ' + MCF + ';letter-spacing:.22em;text-transform:uppercase;color:#4a4a4d;opacity:0;filter:blur(5px);transition:opacity .35s ease,filter .35s ease}',
     'html.mc-viewing .mc-vcap{opacity:1;filter:none;transition-delay:.18s}',
+    'html.mc-viewing .mc-vcap.is-swap{opacity:0;filter:blur(4px);transition-duration:.14s;transition-delay:0s}',
     // phones: the box sits at the foot of the screen, the chosen tile above it; the filters go under the name
     '@media (max-width:' + NARROW + 'px){',
     '  .mc-head{top:calc(var(--mh-row,58px) + 14px)}',
@@ -2517,34 +2517,65 @@
       swapT = setTimeout(function () { fill(shown); pbody.classList.remove('is-swap'); }, 160);
     }
 
-    // ---- the close view: the chosen picture brought to the middle, large, everything else blurred behind it
+    // ---- the close view: the chosen picture brought to the middle, large, everything else blurred behind it.
+    // Going to the next one (or the one before) slides the pictures along as a strip: the one leaving drifts aside,
+    // turns away a little and fades, as the next comes in and turns to face you. A finger or the mouse can drag the
+    // strip; let go and it carries on in the way it was thrown and settles on a picture.
     var veil = el('div', 'mc-veil', document.body);
     var view = el('div', 'mc-view', document.body);
-    var vtile = el('div', 'mc-vtile', view);
     var vcap = el('div', 'mc-vcap', view);
-    var vOn = false, vv = 0, vvT = 0, vItem = -1, vSwapT = 0, VW = 0, VH = 0;
-    function viewFill(i) {
-      vItem = i;
-      vtile.innerHTML = '';
-      vtile.appendChild(faceFor(i, '(max-width: 760px) 92vw, 72vh'));
-      var r = vis.indexOf(i);
-      vcap.textContent = items[i].name + '\u2003\u2003' + pad2(r + 1) + ' / ' + pad2(vis.length);
+    var vOn = false, vv = 0, vvT = 0, vItem = -1, VW = 0, VH = 0;
+    var vEls = {};                                    // each picture's large copy, made when first needed
+    var q = 0, qT = 0, qV = 0, qDrag = false;         // the strip: where it is (in places), where it's headed, its speed
+    var capT = 0;
+    function sizeV(t) {
+      var st = t.style;
+      st.width = VW.toFixed(1) + 'px';
+      st.height = VH.toFixed(1) + 'px';
+      st.marginLeft = (-VW / 2).toFixed(1) + 'px';
+      st.marginTop = (-VH / 2).toFixed(1) + 'px';
     }
+    function vEl(i) {
+      var t = vEls[i];
+      if (!t) {
+        t = vEls[i] = el('div', 'mc-vtile');
+        view.insertBefore(t, vcap);
+        t.appendChild(faceFor(i, '(max-width: 760px) 92vw, 72vh'));
+        sizeV(t);
+        t.style.opacity = '0';
+        t.style.visibility = 'hidden';
+        t.__o = '0'; t.__v = 'hidden';
+      }
+      return t;
+    }
+    // the ones either side are made ready before they are needed, so a picture never arrives still loading
+    function vNear(r) { for (var k = r - 1; k <= r + 1; k++) if (k >= 0 && k < vis.length) vEl(vis[k]); }
+    function vCaption(i, now) {
+      var r = vis.indexOf(i);
+      var txt = items[i].name + '\u2003\u2003' + pad2(r + 1) + ' / ' + pad2(vis.length);
+      clearTimeout(capT);
+      if (now) { vcap.classList.remove('is-swap'); vcap.textContent = txt; return; }
+      vcap.classList.add('is-swap');
+      capT = setTimeout(function () { vcap.textContent = txt; vcap.classList.remove('is-swap'); }, 150);
+    }
+    function vGap() { return VW + (phone ? 28 : 72); }
     function setView(on) {
       if (on === vOn || !ready || (on && !open)) return;
       vOn = on;
       vvT = on ? 1 : 0;
       vTw = { f: vv, t0: -1, d: 0.6, p: 0 };
-      if (on) { clearTimeout(vSwapT); vtile.classList.remove('is-swap'); viewFill(cur); }
+      if (on) { vItem = cur; q = qT = vis.indexOf(cur); qV = 0; vNear(qT); vCaption(cur, true); }
+      qDrag = false;
+      view.classList.remove('is-drag');
       de.classList.toggle('mc-viewing', on);
       view.style.pointerEvents = on ? 'auto' : 'none';
       kick();
     }
     function viewSwap(i) {
-      clearTimeout(vSwapT);
-      vtile.classList.add('is-swap');
-      vSwapT = setTimeout(function () { viewFill(cur); vtile.classList.remove('is-swap'); }, 180);
       vItem = i;
+      qT = vis.indexOf(i);
+      vNear(qT);
+      vCaption(i);
     }
 
     // ---- state
@@ -2580,11 +2611,7 @@
       // the close view's picture: as large as fits, drawn at that size so it stays sharp
       VH = Math.min(vh * (phone ? 0.66 : 0.78), (vw * (phone ? 0.86 : 0.9)) / ratio);
       VW = VH * ratio;
-      var vs = vtile.style;
-      vs.width = VW.toFixed(1) + 'px';
-      vs.height = VH.toFixed(1) + 'px';
-      vs.marginLeft = (-VW / 2).toFixed(1) + 'px';
-      vs.marginTop = (-VH / 2).toFixed(1) + 'px';
+      Object.keys(vEls).forEach(function (k) { sizeV(vEls[k]); });
       if (phone) focusX = 0;
       else {
         // the chosen tile stands in the middle of the room left beside the box
@@ -2694,15 +2721,49 @@
         var lo = (intro ? (phone ? 0 : P1.lab) : phone ? P1.f : (1 - mm2) + mm2 * P1.f).toFixed(2);
         if (lo !== tl.lo) { tl.no.style.opacity = lo; tl.lo = lo; }
       }
-      // the close view: from where the chosen tile stands to the middle, turning to face you as it comes
+      // the close view: from where the chosen tile stands to the middle, turning to face you as it comes; then the
+      // strip, eased by a spring that neither overshoots nor stops dead
       if (vv > 0.002 || vvT) {
+        if (!qDrag) {
+          if (reduce) { q = qT; qV = 0; }
+          else if (Math.abs(qT - q) > 0.0005 || Math.abs(qV) > 0.003) {
+            var W = 11, x0 = q - qT, ex = Math.exp(-W * dt), c1 = qV + W * x0;
+            q = qT + (x0 + c1 * dt) * ex;
+            qV = (qV - W * c1 * dt) * ex;
+            busy = true;
+          } else { q = qT; qV = 0; }
+        }
         var vt = tiles[vItem];
         rest(vt ? vt.r : 0, P1);
         var e = clamp(vv, 0, 1);
-        var ty = phone ? 10 : 22;
-        var vsc = lerp(P1.sc * TW / VW, 1, e);
-        vtile.style.transform = 'rotateX(' + (TILT * (1 - e)).toFixed(2) + 'deg) translate3d(' + lerp(P1.x, 0, e).toFixed(1) + 'px,' +
-          lerp(P1.y, ty, e).toFixed(1) + 'px,0) rotateY(' + (P1.a * (1 - e)).toFixed(2) + 'deg) scale(' + vsc.toFixed(4) + ')';
+        var ty = phone ? 10 : 22, gap = vGap();
+        for (var key in vEls) {
+          var ve = vEls[key], ii = +key, k = vis.indexOf(ii);
+          var dd = k < 0 ? 9 : k - q, ad = Math.abs(dd);
+          var vop = 0, vtf = ve.__tf, vfb = 'none';
+          if (ad < 1.3) {
+            // along the strip: aside by a picture's width and a gap, turned away a little, a touch smaller, fading
+            var sx = dd * gap, sa = -dd * (phone ? 8 : 12), ssc = 1 - 0.08 * Math.min(1, ad);
+            var sop = 1 - smooth(0.3, 1, ad);
+            if (ii === vItem) {
+              vop = 1 - e * (1 - sop);
+              vtf = 'rotateX(' + (TILT * (1 - e)).toFixed(2) + 'deg) translate3d(' + lerp(P1.x, sx, e).toFixed(1) + 'px,' +
+                lerp(P1.y, ty, e).toFixed(1) + 'px,0) rotateY(' + lerp(P1.a, sa, e).toFixed(2) + 'deg) scale(' + lerp(P1.sc * TW / VW, ssc, e).toFixed(4) + ')';
+            } else {
+              vop = sop * e;
+              vtf = 'translate3d(' + sx.toFixed(1) + 'px,' + ty + 'px,0) rotateY(' + sa.toFixed(2) + 'deg) scale(' + ssc.toFixed(4) + ')';
+            }
+            if (!phone && ad > 0.2) vfb = 'blur(' + (5 * smooth(0.2, 1, ad)).toFixed(1) + 'px)';
+          }
+          var vo = vop.toFixed(3), vvis = vop > 0.003 ? 'visible' : 'hidden';
+          if (vvis !== ve.__v) { ve.style.visibility = vvis; ve.__v = vvis; }
+          if (vvis === 'hidden') continue;
+          if (vo !== ve.__o) { ve.style.opacity = vo; ve.__o = vo; }
+          if (vtf !== ve.__tf) { ve.style.transform = vtf; ve.__tf = vtf; }
+          if (vfb !== ve.__fb) { ve.style.filter = vfb; ve.__fb = vfb; }
+          var vz = String(30 - Math.round(ad * 10));
+          if (vz !== ve.__z) { ve.style.zIndex = vz; ve.__z = vz; }
+        }
         var b = (16 * e).toFixed(1);
         veil.style.webkitBackdropFilter = veil.style.backdropFilter = 'blur(' + b + 'px)';
         veil.style.backgroundColor = 'rgba(238,238,239,' + (0.38 * e).toFixed(3) + ')';
@@ -2858,17 +2919,59 @@
       tiles.forEach(function (t) { t.hT = 0; });
       kick();
     });
-    // the close view: a tap or click anywhere puts the picture back; a swipe goes to the next or the one before
+    // the close view: a tap or click anywhere puts the picture back; a sideways drag moves the strip under the finger
+    // (it gives a little past either end) and, let go, it settles on the next, the one before, or back where it was
     var vdrag = null;
-    view.addEventListener('pointerdown', function (e) { vdrag = { x: e.clientX, y: e.clientY, id: e.pointerId }; });
-    view.addEventListener('pointerup', function (e) {
-      if (!vdrag || e.pointerId !== vdrag.id) return;
-      var dx = e.clientX - vdrag.x, dy = e.clientY - vdrag.y;
-      vdrag = null;
-      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
-      else setView(false);
+    function give(x) { return 0.32 * x / (1 + x); }
+    view.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      vdrag = { x: e.clientX, y: e.clientY, id: e.pointerId, moved: false, q0: q, lx: e.clientX, lt: performance.now(), vx: 0 };
     });
-    view.addEventListener('pointercancel', function () { vdrag = null; });
+    view.addEventListener('pointermove', function (e) {
+      if (!vdrag || e.pointerId !== vdrag.id || !vOn) return;
+      var dx = e.clientX - vdrag.x;
+      if (!vdrag.moved) {
+        if (Math.abs(dx) < 7 || Math.abs(dx) < Math.abs(e.clientY - vdrag.y)) return;
+        vdrag.moved = true;
+        vdrag.x = e.clientX;
+        dx = 0;
+        vdrag.q0 = q;
+        qDrag = true;
+        qV = 0;
+        view.classList.add('is-drag');
+        try { view.setPointerCapture(e.pointerId); } catch (er) {}
+      }
+      var tn = performance.now();
+      if (tn > vdrag.lt) vdrag.vx = vdrag.vx * 0.5 + ((e.clientX - vdrag.lx) / (tn - vdrag.lt)) * 0.5;
+      vdrag.lx = e.clientX;
+      vdrag.lt = tn;
+      var n1 = vis.length - 1, qq = vdrag.q0 - dx / vGap();
+      if (qq < 0) qq = -give(-qq);
+      else if (qq > n1) qq = n1 + give(qq - n1);
+      q = qq;
+      kick();
+    });
+    function vEnd(e) {
+      if (!vdrag || (e && e.pointerId !== vdrag.id)) return;
+      var d = vdrag;
+      vdrag = null;
+      if (!d.moved) { if (e && e.type === 'pointerup' && vOn) setView(false); return; }
+      qDrag = false;
+      view.classList.remove('is-drag');
+      // how fast it was going as it was let go (places a second), and where that takes it: one along when pushed past
+      // a fifth of the way or flicked, otherwise back
+      var vq = performance.now() - d.lt < 100 ? -d.vx * 1000 / vGap() : 0;
+      var base = Math.round(d.q0), to = Math.round(q + clamp(vq * 0.14, -0.6, 0.6));
+      if (to === base && Math.abs(q - base) > 0.2) to = base + (q > base ? 1 : -1);
+      to = clamp(to, 0, vis.length - 1);
+      qV = clamp(vq, -14, 14);
+      qT = to;
+      sT = to;
+      sync();
+      kick();
+    }
+    view.addEventListener('pointerup', vEnd);
+    view.addEventListener('pointercancel', vEnd);
 
     // the wheel or a trackpad: a notch of a mouse wheel is one tile; a trackpad goes smoothly and settles on a tile
     var wheelT = 0, wheelHold = 0, notchAt = 0;
