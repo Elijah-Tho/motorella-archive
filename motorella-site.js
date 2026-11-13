@@ -207,13 +207,17 @@
     '  html.mh-shop .mtla-toggle-bar{position:fixed!important;left:50%!important;right:auto!important;top:auto!important;bottom:calc(20px + env(safe-area-inset-bottom,0px))!important;margin:0!important;',
     '    transform:translateX(-50%) scale(2.1);transform-origin:50% 100%;z-index:60;filter:drop-shadow(0 3px 6px rgba(0,0,0,.16))}',
     '  html.mh-shop .shop-body{padding-bottom:110px!important}',
-    // a fabric filter change fades and blurs the products as one layer (the page's own fade blurs every product on
-    // its own, which phones skip, so the change looked static there): the products themselves just swap underneath
+    // a fabric filter change: the products on screen fade, blur and lift away one by one as on computers, swap while
+    // hidden, and the new ones come back the same way. Only the ones in sight move (phones can't blur every product
+    // at once, nor the whole list as one tall layer, and showed the change with no motion at all); the rest simply
+    // swap. The page's own fade is set aside here.
     '  html.mh-shop .product-card.mtla-fade-out,html.mh-shop .product-card.mtla-fade-in{opacity:1!important;-webkit-filter:none!important;filter:none!important;transform:none!important;transition:none!important}',
-    '  html.mh-shop .product-grid.mh-gout{opacity:0;-webkit-filter:blur(9px);filter:blur(9px);transform:translateY(-8px);will-change:opacity,filter,transform;',
-    '    transition:opacity .19s cubic-bezier(.22,.9,.32,1),-webkit-filter .19s cubic-bezier(.22,.9,.32,1),filter .19s cubic-bezier(.22,.9,.32,1),transform .19s cubic-bezier(.22,.9,.32,1)}',
-    '  html.mh-shop .product-grid.mh-gin{will-change:opacity,filter,transform;',
-    '    transition:opacity .3s cubic-bezier(.22,.9,.32,1),-webkit-filter .3s cubic-bezier(.22,.9,.32,1),filter .3s cubic-bezier(.22,.9,.32,1),transform .3s cubic-bezier(.22,.9,.32,1)}',
+    '  html.mh-shop .product-grid.mh-gout .product-card.mh-vis{opacity:0!important;-webkit-filter:blur(9px)!important;filter:blur(9px)!important;transform:translate3d(0,-8px,0)!important;',
+    '    will-change:opacity,filter,transform;transition:opacity .23s cubic-bezier(.22,.9,.32,1),-webkit-filter .23s cubic-bezier(.22,.9,.32,1),filter .23s cubic-bezier(.22,.9,.32,1),transform .23s cubic-bezier(.22,.9,.32,1)!important}',
+    '  html.mh-shop .product-grid.mh-gout .product-card:not(.mh-vis){opacity:0!important;transition:none!important}',
+    '  html.mh-shop .product-grid.mh-gout.mh-gset .product-card,html.mh-shop .product-grid.mh-gout.mh-gset .product-card.mh-vis{transition:none!important}',
+    '  html.mh-shop .product-grid.mh-gin .product-card.mh-vis{will-change:opacity,filter,transform;',
+    '    transition:opacity .3s cubic-bezier(.22,.9,.32,1),-webkit-filter .3s cubic-bezier(.22,.9,.32,1),filter .3s cubic-bezier(.22,.9,.32,1),transform .3s cubic-bezier(.22,.9,.32,1)!important}',
     // every row of products sizes to its content (the first two had a fixed height), so open sizes push the next row down
     '  html.mh-shop .product-grid{grid-template-rows:none!important}',
     // the product view: the first screen is the product alone (pictures, the title panel, the size chart button); the
@@ -1008,16 +1012,30 @@
       release();
     }, true);
   }
-  // phones: when the fabric button changes the filter, the products fade and blur out together, swap while hidden
-  // (back to the top of the list if it was scrolled into), and fade back in, the same motion as on computers
+  // phones: when the fabric button changes the filter, the products in sight fade, blur and lift away, the list swaps
+  // while they are hidden (back to the top if it was scrolled into), and the new ones in sight come back the same way:
+  // the motion computers have
   function filterFade() {
     var grid = document.querySelector('.product-grid');
     if (!grid) return;
     var mq = window.matchMedia('(max-width:' + NARROW + 'px)');
-    var timer, mo, t0;
+    var timer, mo, t0, gen = 0;
     function stop() {
       if (mo) { mo.disconnect(); mo = null; }
       clearTimeout(timer);
+    }
+    function cards() { return [].slice.call(grid.querySelectorAll('.product-card')); }
+    // mark the products on screen (and just off it): those are the ones that move
+    function mark() {
+      var vh = window.innerHeight;
+      cards().forEach(function (c) {
+        var r = c.getBoundingClientRect();
+        c.classList.toggle('mh-vis', !!((r.width || r.height) && r.bottom > -60 && r.top < vh + 60));
+      });
+    }
+    function clear() {
+      grid.classList.remove('mh-gout', 'mh-gin', 'mh-gset');
+      cards().forEach(function (c) { c.classList.remove('mh-vis'); });
     }
     function back() {
       stop();
@@ -1026,16 +1044,28 @@
         if (grid.getBoundingClientRect().top < 0) {
           try { window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, 0); }
         }
-        grid.classList.remove('mh-gout');
-        grid.classList.add('mh-gin');
-        timer = setTimeout(function () { grid.classList.remove('mh-gin'); }, 420);
-      }, Math.max(0, 190 - (Date.now() - t0)));
+        // the new ones in sight take the hidden look at once, then (a frame later) ease back in from it
+        var g = gen;
+        grid.classList.add('mh-gset');
+        mark();
+        void grid.offsetHeight;
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            if (g !== gen) return;
+            grid.classList.remove('mh-gout', 'mh-gset');
+            grid.classList.add('mh-gin');
+            timer = setTimeout(clear, 380);
+          });
+        });
+      }, Math.max(0, 240 - (Date.now() - t0)));
     }
     document.addEventListener('click', function (e) {
       if (!mq.matches || !e.target.closest || !e.target.closest('.mtla-dot')) return;
       stop();
+      gen++;
       t0 = Date.now();
-      grid.classList.remove('mh-gin');
+      grid.classList.remove('mh-gin', 'mh-gset');
+      mark();
       grid.classList.add('mh-gout');
       // the page swaps the products about 0.2s after the tap, marking them mtla-fade-in
       if ('MutationObserver' in window) {
@@ -1049,7 +1079,7 @@
       timer = setTimeout(back, 420);
     }, true);
     // (leaving phone width mid-change never strands the products faded out)
-    var off = function () { if (!mq.matches) { stop(); grid.classList.remove('mh-gout', 'mh-gin'); } };
+    var off = function () { if (!mq.matches) { stop(); clear(); } };
     if (mq.addEventListener) mq.addEventListener('change', off); else if (mq.addListener) mq.addListener(off);
   }
   function whenReady(fn) {
@@ -1741,7 +1771,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.10/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.11/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
