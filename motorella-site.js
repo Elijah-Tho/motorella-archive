@@ -1771,7 +1771,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.11/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.12/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
@@ -2057,6 +2057,120 @@
   }
 
   // ------------------------------------------------------------------------------------------------ start
+  // ------------------------------------------------------------------------------------------------ the email sign-up
+  // A small box in the bottom right of the footer on the home page and the shop (on a phone, a row above the copyright),
+  // in the manner of the old shop's: EMAIL | SUBMIT. It is the page's own Webflow form (the form block with the class
+  // mh-news-src, added in the Designer), so every address lands in Webflow's form submissions and goes on from there to
+  // Shopify; this only moves it into place and dresses it. Once sent, the box shows a green tick and nothing else.
+  var NEWS_F = '"Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif';
+  var NEWS_CSS = [
+    '.mh-news-src:not(.mh-news){display:none!important}',
+    '.mh-news{position:absolute!important;right:var(--mh-pad,40px);left:auto!important;bottom:auto!important;top:0;width:300px!important;transform:none!important;height:28px!important;margin:0!important;padding:0!important;',
+    '  font:400 9.5px/1 ' + NEWS_F + ';letter-spacing:.16em;text-transform:uppercase;text-shadow:none;pointer-events:auto;z-index:5;text-align:left}',
+    // (no !important on the form's display: Webflow hides the form with an inline style once it is sent)
+    '.mh-news form{position:relative;display:flex;align-items:stretch;width:100%!important;height:100%!important;margin:0!important;padding:0!important;',
+    '  border:1px solid rgba(0,0,0,.16);background:rgba(255,255,255,.28);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-sizing:border-box;transition:border-color .3s ease}',
+    '.mh-news form:focus-within{border-color:rgba(0,0,0,.34)}',
+    '.mh-news form > *:not(input):not(button){display:none!important}',
+    '.mh-news input.w-input,.mh-news input[type=email],.mh-news input[type=text]{flex:1 1 auto!important;min-width:0!important;width:auto!important;height:100%!important;margin:0!important;padding:0 12px!important;',
+    '  border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:#3d3d40!important;font:inherit!important;letter-spacing:.08em!important;',
+    '  text-transform:none!important;text-align:center!important;line-height:normal!important;outline:none!important;-webkit-appearance:none;appearance:none}',
+    '.mh-news input::placeholder{color:#9c9c9f;letter-spacing:.16em;text-transform:uppercase;opacity:1;transition:opacity .25s ease}',
+    '.mh-news input:focus::placeholder{opacity:0}',
+    '.mh-news input[type=submit],.mh-news button,.mh-news .w-button{flex:none!important;display:block!important;width:76px!important;height:100%!important;margin:0!important;padding:0 0 0 .16em!important;',
+    '  border:0!important;border-left:1px solid rgba(0,0,0,.16)!important;border-radius:0!important;background:transparent!important;color:#3d3d40!important;font:inherit!important;',
+    '  letter-spacing:inherit!important;text-transform:uppercase!important;line-height:normal!important;cursor:pointer;-webkit-appearance:none;appearance:none;transition:background-color .25s ease}',
+    '@media (any-hover:hover){.mh-news input[type=submit]:hover,.mh-news button:hover,.mh-news .w-button:hover{background:rgba(14,14,17,.07)!important}}',
+    // sent: the same box with a green tick drawn in its middle
+    '.mh-news .w-form-done{position:absolute;inset:0;margin:0!important;padding:0!important;border:1px solid rgba(0,0,0,.16);background:rgba(255,255,255,.28)!important;',
+    '  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-sizing:border-box;animation:mhNewsIn .45s ease both}',
+    '.mh-news .w-form-done svg{position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;fill:none;stroke:#2aa84a;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;overflow:visible}',
+    '.mh-news .w-form-done path{stroke-dasharray:22;stroke-dashoffset:22;animation:mhNewsTick .5s cubic-bezier(.65,0,.35,1) .15s forwards}',
+    '@keyframes mhNewsIn{from{opacity:0;filter:blur(4px)}to{opacity:1;filter:none}}',
+    '@keyframes mhNewsTick{to{stroke-dashoffset:0}}',
+    // not sent: a short line over the box; the box stays to try again
+    '.mh-news .w-form-fail{position:absolute;right:0;bottom:calc(100% + 7px);margin:0!important;padding:0!important;background:none!important;white-space:nowrap;',
+    '  font-size:8.5px;letter-spacing:.16em;color:#b0413e}',
+    // over a picture (the home page): dark glass and light words
+    '.mh-news.is-dark form,.mh-news.is-dark .w-form-done{border-color:rgba(255,255,255,.34);background:rgba(14,14,17,.34)!important;-webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3)}',
+    '.mh-news.is-dark form:focus-within{border-color:rgba(255,255,255,.6)}',
+    '.mh-news.is-dark input.w-input,.mh-news.is-dark input[type=email],.mh-news.is-dark input[type=text]{color:#fff!important}',
+    '.mh-news.is-dark input::placeholder{color:rgba(255,255,255,.62)}',
+    '.mh-news.is-dark input[type=submit],.mh-news.is-dark button,.mh-news.is-dark .w-button{color:#fff!important;border-left-color:rgba(255,255,255,.34)!important}',
+    '@media (any-hover:hover){.mh-news.is-dark input[type=submit]:hover,.mh-news.is-dark button:hover,.mh-news.is-dark .w-button:hover{background:rgba(255,255,255,.14)!important}}',
+    '.mh-news.is-dark .w-form-done svg{stroke:#39d164}',
+    '.mh-news.is-dark .w-form-fail{color:#ff9a94;text-shadow:0 0 8px rgba(0,0,0,.35)}',
+    // the film behind it on the home page doesn't dim while the pointer is on the box or someone is typing in it
+    '@media (any-hover:hover){.mhome-hit:has(.mh-news:hover) video,.mhome-hit:has(.mh-news:focus-within) video{filter:none;transform:none}',
+    '  .mhome-hit:has(.mh-news:hover) .mhome-cover span,.mhome-hit:has(.mh-news:focus-within) .mhome-cover span{opacity:0;transform:translateY(5px);filter:blur(3px)}}',
+    // phones: a full-width row above the copyright (typing at 16px, so the phone doesn't zoom in on it)
+    '@media (max-width:' + NARROW + 'px){',
+    '  .mh-news{position:relative!important;right:auto;top:auto!important;width:auto!important;max-width:420px;height:38px!important;margin:0 auto 14px!important;font-size:10px}',
+    '  .mh-news input.w-input,.mh-news input[type=email],.mh-news input[type=text]{font-size:16px!important;letter-spacing:.02em!important}',
+    '  .mh-news input::placeholder{font-size:10px}',
+    '  .mh-news input[type=submit],.mh-news button,.mh-news .w-button{width:88px!important}',
+    '  .mh-news .w-form-done svg{width:18px;height:18px;margin:-9px 0 0 -9px}',
+    '  .mtla-footer--shop.mh-has-news{display:block!important;height:auto!important;padding:28px 20px 96px!important;text-align:center}',
+    '  .mhome-foot.mh-has-news{padding-left:20px;padding-right:20px}',
+    '}'
+  ].join('\n');
+  function newsletter() {
+    var n = 0;
+    (function find() {
+      var src = document.querySelector('.mh-news-src');
+      var foot = document.querySelector('.mhome-foot') || document.querySelector('.mtla-footer--shop');
+      if (!src || !foot || !src.querySelector('form')) { if (n++ < 24) setTimeout(find, 250); return; }
+      if (src.classList.contains('mh-news')) return;
+      el('style', '', document.head, NEWS_CSS);
+      var form = src.querySelector('form');
+      var inp = form.querySelector('input[type=email]') || form.querySelector('input.w-input') || form.querySelector('input[type=text]');
+      var btn = form.querySelector('input[type=submit]') || form.querySelector('button') || form.querySelector('.w-button');
+      if (!inp) return;
+      src.classList.add('mh-news');
+      if (foot.classList.contains('is-over')) src.classList.add('is-dark');
+      foot.classList.add('mh-has-news');
+      inp.type = 'email';
+      inp.required = true;
+      inp.placeholder = 'Email';
+      inp.setAttribute('autocomplete', 'email');
+      inp.setAttribute('aria-label', 'Email');
+      if (btn) {
+        if (btn.tagName === 'INPUT') btn.value = 'Submit'; else btn.textContent = 'Submit';
+        btn.setAttribute('data-wait', '···');
+      }
+      var done = src.querySelector('.w-form-done'), fail = src.querySelector('.w-form-fail');
+      if (done) {
+        done.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.4 4.4L19 7.2"/></svg>';
+        done.setAttribute('role', 'status');
+        done.setAttribute('aria-label', 'Signed up');
+      }
+      if (fail) fail.innerHTML = '<div>Could not send — try again</div>';
+      var mq = window.matchMedia('(max-width:' + NARROW + 'px)');
+      // desktop: level with the copyright line, at the right; phone: first in the footer, above the copyright
+      function place() {
+        if (mq.matches) {
+          if (foot.firstChild !== src) foot.insertBefore(src, foot.firstChild);
+          src.style.top = '';
+          return;
+        }
+        if (src.parentNode !== foot || foot.lastChild !== src) foot.appendChild(src);
+        var fr = foot.getBoundingClientRect(), rg = document.createRange(), cy = 0;
+        for (var c = foot.firstChild; c; c = c.nextSibling) {
+          if (c === src) continue;
+          rg.selectNodeContents(c);
+          var r = rg.getBoundingClientRect();
+          if (r.height) { cy = r.top + r.height / 2; break; }
+        }
+        if (!cy) cy = fr.bottom - 22;
+        src.style.top = (cy - fr.top - 14).toFixed(1) + 'px';
+      }
+      place();
+      var rz = 0;
+      window.addEventListener('resize', function () { cancelAnimationFrame(rz); rz = requestAnimationFrame(place); });
+      if (mq.addEventListener) mq.addEventListener('change', place); else if (mq.addListener) mq.addListener(place);
+    })();
+  }
+
   // ------------------------------------------------------------------------------------------------ checkout
   // A Checkout button at the foot of the dropdown cart (every page). For now it does nothing: later it will hand the
   // cart (each item and its size) to the Shopify store and go to the matching Shopify cart. To wire that up, set
@@ -3104,6 +3218,7 @@
     if (IS.classic) classic();
     if (IS.arch) classicLinks();
     checkoutButton();
+    if (IS.home || IS.shop) newsletter();
     // the reminder: one still waiting is put straight back; otherwise the next is set
     var due = nudgePlan();
     if (nudgeState().pending) nudge(true);
