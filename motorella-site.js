@@ -29,6 +29,7 @@
     archive: '/motorella-archive',
     c01: '/motorella-archive-01',
     c01c: '/motorella-classic-01',
+    landing: '/motorella-landing',
     ntf: '/motorella-nine-to-five'
   };
   var NAV = window.MOTORELLA_NAV || [
@@ -55,8 +56,12 @@
   var CART_KEY = 'motorella_cart_v1';
 
   var path = location.pathname.replace(/\/+$/, '') || '/';
+  // the landing page (the loading screen and the chair; its own script) has none of the site's furniture: no header,
+  // no cart, no reminder. Only the email sign-up is put in place there.
+  var LANDING = path === P.landing || document.documentElement.hasAttribute('data-mtla-landing');
   var IS = {
-    home: path === P.home || path === '/' || !!document.querySelector('[data-mtla-home]'),
+    landing: LANDING,
+    home: !LANDING && (path === P.home || path === '/' || !!document.querySelector('[data-mtla-home]')),
     shop: path === P.shop || !!document.querySelector('.product-grid'),
     arch: path.indexOf(P.archive) === 0 || path === P.ntf || !!document.querySelector('[data-mtla-archive],[data-mtla-chairs]'),
     looks: path === P.looks || !!document.querySelector('.lk-row'),
@@ -404,7 +409,8 @@
     '  .mh-note-head span{font-size:11px;line-height:16px}',
     '  .mh-note-msg{font-size:12.5px;line-height:16px}',
     '}',
-    '.mh-soldout{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:2;box-sizing:content-box;margin:0;padding:4px 7px 3px;font-size:9px;line-height:11px;font-weight:700;',
+    // the sold-out tag: the box the world simulation shows over the console and the rest, at the top right of the photo
+    '.mh-soldout{position:absolute;left:0;top:8px;transform:translateX(-100%);z-index:2;box-sizing:content-box;margin:0;padding:4px 7px 3px;font-size:9px;line-height:11px;font-weight:700;',
     '  letter-spacing:.09em;color:#3c3c3c;background:rgba(241,241,241,.88);border:1px solid rgba(60,60,60,.12);border-radius:3px;white-space:nowrap;',
     '  font-family:"Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif;pointer-events:none}',
     '.product-card.is-sold-out .product-image{opacity:.7;filter:grayscale(.3);transition:opacity .3s ease}',
@@ -1133,31 +1139,71 @@
     var out = c.querySelectorAll('.size-option[data-sold-out="true"],.size-option.is-sold-out');
     return out.length === sizes.length;
   }
+  // A product is sold out when its card carries data-sold-out="true" (a field on the product in Webflow, and later set
+  // from the Shopify stock count) or when every one of its sizes does. It gets a SOLD OUT tag at the top right of its
+  // photo; the attribute can change at any time and the tag follows it.
   function soldOut() {
     tip = el('div', 'mh-tip', document.body, 'SOLD OUT');
-    [].forEach.call(document.querySelectorAll('.size-option[data-sold-out="true"]'), function (s) { s.classList.add('is-sold-out'); });
-    [].forEach.call(document.querySelectorAll('.product-card'), function (c) {
-      if (!isSoldOut(c)) return;
-      c.classList.add('is-sold-out');
+    function sizes() {
+      [].forEach.call(document.querySelectorAll('.size-option'), function (s) {
+        s.classList.toggle('is-sold-out', (s.getAttribute('data-sold-out') || '').toLowerCase() === 'true');
+      });
+    }
+    function mark(c) {
+      var wasAttr = c.__mhSold;
+      c.classList.remove('is-sold-out');
+      var on = isSoldOut(c);
+      c.__mhSold = on;
+      c.classList.toggle('is-sold-out', on);
+      var tag = c.querySelector(':scope > .mh-soldout');
+      if (!on) { if (tag) tag.remove(); return; }
       if (getComputedStyle(c).position === 'static') c.style.position = 'relative';
-      var tag = el('span', 'mh-soldout', c, 'SOLD OUT');
+      if (!tag) tag = el('span', 'mh-soldout', c, 'SOLD OUT');
       var pic = c.querySelector('.product-image');
       var place = function () {
         if (!pic || !pic.offsetWidth) return;
-        tag.style.left = pic.offsetLeft + pic.offsetWidth / 2 + 'px';
-        tag.style.top = pic.offsetTop + 10 + 'px';
+        tag.style.left = pic.offsetLeft + pic.offsetWidth - 8 + 'px';
+        tag.style.top = pic.offsetTop + 8 + 'px';
       };
       place();
-      if (pic && !pic.complete) pic.addEventListener('load', place);
-      window.addEventListener('resize', place);
-      c.addEventListener('pointermove', function (e) {
-        if (e.pointerType === 'touch') return;
-        tip.style.transform = 'translate(' + (e.clientX + 14) + 'px,' + (e.clientY + 14) + 'px)';
-        tip.classList.add('is-on');
+      if (pic && !pic.complete) pic.addEventListener('load', place, { once: true });
+      if (!c.__mhSoldWired) {
+        c.__mhSoldWired = true;
+        window.addEventListener('resize', function () { if (c.__mhSold) mark(c); });
+        c.addEventListener('pointermove', function (e) {
+          if (e.pointerType === 'touch' || !c.__mhSold) return;
+          tip.style.transform = 'translate(' + (e.clientX + 14) + 'px,' + (e.clientY + 14) + 'px)';
+          tip.classList.add('is-on');
+        });
+        c.addEventListener('pointerleave', function () { tip.classList.remove('is-on'); });
+      }
+      return wasAttr;
+    }
+    sizes();
+    [].forEach.call(document.querySelectorAll('.product-card'), mark);
+    document.addEventListener('click', function (e) {
+      var c = e.target.closest && e.target.closest('.product-card');
+      if (c && c.__mhSold) window.__mhSoldOutCard = c;
+    }, true);
+    // the attribute changing later (in Webflow, or from Shopify's stock count) puts the tag on or takes it off
+    if ('MutationObserver' in window) {
+      new MutationObserver(function (ms) {
+        var cards = [];
+        ms.forEach(function (m) {
+          var t = m.target;
+          if (t.classList && t.classList.contains('size-option')) { sizes(); t = t.closest('.product-card'); }
+          if (t && t.classList && t.classList.contains('product-card') && cards.indexOf(t) < 0) cards.push(t);
+        });
+        cards.forEach(mark);
+      }).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['data-sold-out'] });
+    }
+    // (for trying it out: MotorellaSoldOut('FIVE FINGER BODYSUIT', true) marks every card of that name)
+    window.MotorellaSoldOut = function (name, on) {
+      [].forEach.call(document.querySelectorAll('.product-card'), function (c) {
+        var t = c.querySelector('.product-title');
+        if (!name || (t && t.textContent.trim().toLowerCase() === String(name).trim().toLowerCase())) c.setAttribute('data-sold-out', on === false ? 'false' : 'true');
       });
-      c.addEventListener('pointerleave', function () { tip.classList.remove('is-on'); });
-      c.addEventListener('click', function () { window.__mhSoldOutCard = c; }, true);
-    });
+    };
     // an open product that is sold out can't be added to the cart
     document.addEventListener('click', function (e) {
       var add = e.target.closest('.pv-section-secondary');
@@ -1771,7 +1817,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.13/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.14/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
@@ -2076,8 +2122,9 @@
     '.mh-news form > label{display:none!important}',
     '.mh-news form > div{position:absolute!important;right:0;bottom:calc(100% + 8px);z-index:6;margin:0!important}',
     '.mh-news input.w-input,.mh-news input[type=email],.mh-news input[type=text]{flex:1 1 auto!important;min-width:0!important;width:auto!important;height:100%!important;margin:0!important;padding:0 12px!important;',
-    '  border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:#3d3d40!important;font:inherit!important;letter-spacing:.08em!important;',
-    '  text-transform:none!important;text-align:center!important;line-height:normal!important;outline:none!important;-webkit-appearance:none;appearance:none}',
+    '  border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:#3d3d40!important;font:inherit!important;letter-spacing:.12em!important;',
+    // (what is typed shows in capitals; the address itself is sent just as it was typed)
+    '  text-transform:uppercase!important;text-align:center!important;line-height:normal!important;outline:none!important;-webkit-appearance:none;appearance:none}',
     '.mh-news input::placeholder{color:#9c9c9f;letter-spacing:.16em;text-transform:uppercase;opacity:1;transition:opacity .25s ease}',
     '.mh-news input:focus::placeholder{opacity:0}',
     '.mh-news input[type=submit],.mh-news button,.mh-news .w-button{flex:none!important;display:block!important;width:76px!important;height:100%!important;margin:0!important;padding:0 0 0 .16em!important;',
@@ -2109,7 +2156,7 @@
     // phones: a full-width row above the copyright (typing at 16px, so the phone doesn't zoom in on it)
     '@media (max-width:' + NARROW + 'px){',
     '  .mh-news{position:relative!important;right:auto;top:auto!important;width:auto!important;max-width:420px;height:38px!important;margin:0 auto 14px!important;font-size:10px}',
-    '  .mh-news input.w-input,.mh-news input[type=email],.mh-news input[type=text]{font-size:16px!important;letter-spacing:.02em!important}',
+    '  .mh-news input.w-input,.mh-news input[type=email],.mh-news input[type=text]{font-size:16px!important;letter-spacing:.06em!important}',
     '  .mh-news input::placeholder{font-size:10px}',
     '  .mh-news input[type=submit],.mh-news button,.mh-news .w-button{width:88px!important}',
     '  .mh-news .w-form-done svg{width:18px;height:18px;margin:-9px 0 0 -9px}',
@@ -2121,7 +2168,7 @@
     var n = 0;
     (function find() {
       var src = document.querySelector('.mh-news-src');
-      var foot = document.querySelector('.mhome-foot') || document.querySelector('.mtla-footer--shop');
+      var foot = document.querySelector('.mhome-foot') || document.querySelector('.mtla-footer--shop') || document.querySelector('.mh-land-foot');
       if (!src || !foot || !src.querySelector('form')) { if (n++ < 24) setTimeout(find, 250); return; }
       if (src.classList.contains('mh-news')) return;
       el('style', '', document.head, NEWS_CSS);
@@ -3214,6 +3261,7 @@
   }
 
   function start() {
+    if (IS.landing) { newsletter(); return; }
     if (IS.home) home();
     buildHeader();
     if (IS.shop) shop();
