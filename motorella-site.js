@@ -1771,7 +1771,7 @@
   // Files that ship with this script (the airbag film and its first frame) are served from the same tagged release.
   var MEDIA = (function () {
     var m = /^(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+@[^/]+\/)/.exec((document.currentScript && document.currentScript.src) || '');
-    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.12/';
+    return m ? m[1] : 'https://cdn.jsdelivr.net/gh/Elijah-Tho/motorella-archive@site-1.5.13/';
   })();
   // After the room: the chair film, then the airbag film. Nothing else.
   var HOME = window.MOTORELLA_HOME || [
@@ -2071,7 +2071,10 @@
     '.mh-news form{position:relative;display:flex;align-items:stretch;width:100%!important;height:100%!important;margin:0!important;padding:0!important;',
     '  border:1px solid rgba(0,0,0,.16);background:rgba(255,255,255,.28);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-sizing:border-box;transition:border-color .3s ease}',
     '.mh-news form:focus-within{border-color:rgba(0,0,0,.34)}',
-    '.mh-news form > *:not(input):not(button){display:none!important}',
+    // (a label, if any, goes; the spam check Webflow adds to the form, an empty box unless it has to ask something,
+    // sits just over the sign-up so a question from it can be seen)
+    '.mh-news form > label{display:none!important}',
+    '.mh-news form > div{position:absolute!important;right:0;bottom:calc(100% + 8px);z-index:6;margin:0!important}',
     '.mh-news input.w-input,.mh-news input[type=email],.mh-news input[type=text]{flex:1 1 auto!important;min-width:0!important;width:auto!important;height:100%!important;margin:0!important;padding:0 12px!important;',
     '  border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:#3d3d40!important;font:inherit!important;letter-spacing:.08em!important;',
     '  text-transform:none!important;text-align:center!important;line-height:normal!important;outline:none!important;-webkit-appearance:none;appearance:none}',
