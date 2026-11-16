@@ -2132,8 +2132,8 @@
     '  letter-spacing:inherit!important;text-transform:uppercase!important;line-height:normal!important;cursor:pointer;-webkit-appearance:none;appearance:none;transition:background-color .25s ease}',
     '@media (any-hover:hover){.mh-news input[type=submit]:hover,.mh-news button:hover,.mh-news .w-button:hover{background:rgba(14,14,17,.07)!important}}',
     // sent: the same box with a green tick drawn in its middle
-    '.mh-news .w-form-done{position:absolute;inset:0;margin:0!important;padding:0!important;border:1px solid rgba(0,0,0,.16);background:rgba(255,255,255,.28)!important;',
-    '  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-sizing:border-box;animation:mhNewsIn .45s ease both}',
+    '.mh-news .w-form-done,.mh-news .w-form-done:focus,.mh-news .w-form-done:focus-visible{position:absolute;inset:0;margin:0!important;padding:0!important;border:1px solid rgba(0,0,0,.16);background:rgba(255,255,255,.28)!important;',
+    '  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-sizing:border-box;outline:none!important;box-shadow:none!important;animation:mhNewsIn .45s ease both}',
     '.mh-news .w-form-done svg{position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;fill:none;stroke:#2aa84a;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;overflow:visible}',
     '.mh-news .w-form-done path{stroke-dasharray:22;stroke-dashoffset:22;animation:mhNewsTick .5s cubic-bezier(.65,0,.35,1) .15s forwards}',
     '@keyframes mhNewsIn{from{opacity:0;filter:blur(4px)}to{opacity:1;filter:none}}',
