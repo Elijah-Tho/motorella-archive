@@ -2125,8 +2125,9 @@
     '  border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:#3d3d40!important;font:inherit!important;letter-spacing:.12em!important;',
     // (what is typed shows in capitals; the address itself is sent just as it was typed)
     '  text-transform:uppercase!important;text-align:center!important;line-height:normal!important;outline:none!important;-webkit-appearance:none;appearance:none}',
-    // prevent browser autofill from turning the input blue
+    // prevent browser autofill from turning the input blue or enlarging the preview text
     '.mh-news input:-webkit-autofill,.mh-news input:-webkit-autofill:hover,.mh-news input:-webkit-autofill:focus,.mh-news input:-webkit-autofill:active{',
+    '  font-family:' + NEWS_F + '!important;font-size:9.5px!important;font-weight:400!important;letter-spacing:.12em!important;line-height:normal!important;',
     '  -webkit-text-fill-color:#3d3d40!important;-webkit-box-shadow:0 0 0 1000px transparent inset!important;box-shadow:0 0 0 1000px transparent inset!important;',
     '  background-color:transparent!important;transition:background-color 999999s ease-in-out 0s!important;caret-color:#3d3d40}',
     '.mh-news.is-dark input:-webkit-autofill,.mh-news.is-dark input:-webkit-autofill:hover,.mh-news.is-dark input:-webkit-autofill:focus,.mh-news.is-dark input:-webkit-autofill:active{',
@@ -2165,6 +2166,7 @@
     '  .mh-news input.w-input,.mh-news input[type=email],.mh-news input[type=text]{font-size:16px!important;letter-spacing:.06em!important}',
     '  .mh-news input::placeholder{font-size:10px}',
     '  .mh-news input[type=submit],.mh-news button,.mh-news .w-button{width:88px!important}',
+    '  .mh-news input:-webkit-autofill,.mh-news input:-webkit-autofill:hover,.mh-news input:-webkit-autofill:focus{font-size:16px!important;letter-spacing:.06em!important}',
     '  .mh-news .w-form-done svg{width:18px;height:18px;margin:-9px 0 0 -9px}',
     '  .mtla-footer--shop.mh-has-news{display:block!important;height:auto!important;padding:28px 20px 96px!important;text-align:center}',
     '  .mhome-foot.mh-has-news{padding-left:20px;padding-right:20px}',
