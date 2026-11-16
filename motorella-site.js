@@ -2125,6 +2125,12 @@
     '  border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:#3d3d40!important;font:inherit!important;letter-spacing:.12em!important;',
     // (what is typed shows in capitals; the address itself is sent just as it was typed)
     '  text-transform:uppercase!important;text-align:center!important;line-height:normal!important;outline:none!important;-webkit-appearance:none;appearance:none}',
+    // prevent browser autofill from turning the input blue
+    '.mh-news input:-webkit-autofill,.mh-news input:-webkit-autofill:hover,.mh-news input:-webkit-autofill:focus,.mh-news input:-webkit-autofill:active{',
+    '  -webkit-text-fill-color:#3d3d40!important;-webkit-box-shadow:0 0 0 1000px transparent inset!important;box-shadow:0 0 0 1000px transparent inset!important;',
+    '  background-color:transparent!important;transition:background-color 999999s ease-in-out 0s!important;caret-color:#3d3d40}',
+    '.mh-news.is-dark input:-webkit-autofill,.mh-news.is-dark input:-webkit-autofill:hover,.mh-news.is-dark input:-webkit-autofill:focus,.mh-news.is-dark input:-webkit-autofill:active{',
+    '  -webkit-text-fill-color:#fff!important;caret-color:#fff}',
     '.mh-news input::placeholder{color:#9c9c9f;letter-spacing:.16em;text-transform:uppercase;opacity:1;transition:opacity .25s ease}',
     '.mh-news input:focus::placeholder{opacity:0}',
     '.mh-news input[type=submit],.mh-news button,.mh-news .w-button{flex:none!important;display:block!important;width:76px!important;height:100%!important;margin:0!important;padding:0 0 0 .16em!important;',
