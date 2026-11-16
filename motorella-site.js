@@ -72,7 +72,7 @@
   // ------------------------------------------------------------------------------------------------ styles
   var CSS = [
     // the header
-    ':root{--mh-row:64px;--mh-ink:#4a4a4d;--mh-ink-soft:rgba(74,74,77,.55);--mh-line:#3c3c3f;--mh-pad:40px}',
+    ':root{--mh-row:44px;--mh-ink:#4a4a4d;--mh-ink-soft:rgba(74,74,77,.55);--mh-line:#3c3c3f;--mh-pad:32px}',
     'html.mh-on .shop-header,html.mh-on .header-left,html.mh-on .nav .nav-links,html.mh-on .back-link{display:none!important}',
     '.mh{position:fixed;left:0;right:0;top:0;z-index:1000;font-family:"Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif;',
     '  color:var(--mh-ink);-webkit-font-smoothing:antialiased;pointer-events:none}',
@@ -93,24 +93,24 @@
     '.mh.is-soft-dark .mh-row,.mh.is-soft-dark .mh-sub{text-shadow:none!important}',
     // the phone menu keeps its own dark glass with light words, whichever look is chosen
     '.mh.is-soft-dark.is-menu.is-menu{--mh-ink:#e6e6e7;--mh-ink-soft:rgba(230,230,231,.62);--mh-line:#cfcfd1}',
-    '.mh-row{position:relative;height:var(--mh-row);display:flex;align-items:center;gap:44px;padding:0 var(--mh-pad);box-sizing:border-box;pointer-events:auto}',
-    '.mh-logo{display:block;flex:none;line-height:0;margin-right:6px}',
+    '.mh-row{position:relative;height:var(--mh-row);display:flex;align-items:center;gap:26px;padding:0 var(--mh-pad);box-sizing:border-box;pointer-events:auto}',
+    '.mh-logo{display:block;flex:none;line-height:0;margin-right:2px}',
     // the logo is drawn in the text colour (its own picture used as a stencil), so it always matches the words
-    '.mh-mark{display:block;height:26px;width:26px;background-color:var(--mh-ink);-webkit-mask:var(--mh-logo) left center/contain no-repeat;mask:var(--mh-logo) left center/contain no-repeat;transition:background-color .45s ease}',
-    '.mh-nav{display:flex;align-items:flex-start;gap:28px;height:100%}',
+    '.mh-mark{display:block;height:16px;width:16px;background-color:var(--mh-ink);-webkit-mask:var(--mh-logo) left center/contain no-repeat;mask:var(--mh-logo) left center/contain no-repeat;transition:background-color .45s ease}',
+    '.mh-nav{display:flex;align-items:flex-start;gap:22px;height:100%}',
     '.mh-item{position:relative;height:100%;display:flex;align-items:center}',
-    '.mh-top,.mh-cart,.mh-menu{font:inherit;font-size:11px;line-height:1;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mh-ink);',
-    '  text-decoration:none;background:none;border:0;padding:6px 0;cursor:pointer;white-space:nowrap;transition:color .45s ease,opacity .25s ease}',
+    '.mh-top,.mh-cart,.mh-menu{font:inherit;font-size:9.5px;line-height:1;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mh-ink);',
+    '  text-decoration:none;background:none;border:0;padding:4px 0;cursor:pointer;white-space:nowrap;transition:color .45s ease,opacity .25s ease}',
     '.mh-top:focus-visible,.mh-link:focus-visible,.mh-cart:focus-visible,.mh-menu:focus-visible{outline:1px solid var(--mh-ink-soft);outline-offset:3px}',
     '.mh-nav:hover .mh-top{opacity:.55}.mh-nav .mh-item:hover .mh-top,.mh-item.is-open .mh-top{opacity:1}',
     '.mh-top u{text-decoration:none}',
-    '.mh-sub{position:absolute;left:0;top:calc(var(--mh-row) - 6px);display:flex;flex-direction:column;align-items:flex-start;gap:9px;padding:8px 0 22px;',
+    '.mh-sub{position:absolute;left:0;top:calc(var(--mh-row) - 2px);display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:6px 0 18px;',
     '  visibility:hidden;pointer-events:none}',
     '.mh-item.is-open .mh-sub{visibility:visible;pointer-events:auto}',
-    '.mh-line{display:flex;align-items:baseline;gap:14px;white-space:nowrap;opacity:0;filter:blur(6px);transform:translateY(-4px);',
+    '.mh-line{display:flex;align-items:baseline;gap:12px;white-space:nowrap;opacity:0;filter:blur(6px);transform:translateY(-4px);',
     '  transition:opacity .3s ease,filter .4s ease,transform .4s cubic-bezier(.2,.75,.15,1)}',
     '.mh-item.is-open .mh-line{opacity:1;filter:blur(0);transform:none}',
-    '.mh-link{font:inherit;font-size:10px;line-height:14px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mh-ink);',
+    '.mh-link{font:inherit;font-size:9.5px;line-height:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mh-ink);',
     '  text-decoration:none;background:none;border:0;padding:0;cursor:pointer;transition:color .45s ease,opacity .2s ease}',
     '.mh-link:hover{opacity:.6}',
 
@@ -123,18 +123,18 @@
     '.mh-way small,.mh-soon{font-size:8px;letter-spacing:.12em;margin-left:5px;text-transform:uppercase}',
     '.mh-line,.mh-ways,.mh-soon{line-height:14px}',
     '.mh-right{margin-left:auto;display:flex;align-items:center;gap:22px}',
-    '.mh-cart-slot .header-cart{display:flex!important;align-items:center;gap:10px;position:static!important;margin:0!important}',
-    '.mh-cart-slot .cart-toggle{color:var(--mh-ink)!important;cursor:pointer;transition:color .45s ease}',
+    '.mh-cart-slot .header-cart{display:flex!important;align-items:center;gap:8px;position:static!important;margin:0!important}',
+    '.mh-cart-slot .cart-toggle{color:var(--mh-ink)!important;font-size:9.5px!important;line-height:1!important;cursor:pointer;transition:color .45s ease}',
     // the mini cart box: a touch darker than the text; its plus drawn in the text colour
-    '.mh-cart-slot .mini-cart-box{border-color:var(--mh-line)!important;transition:border-color .45s ease}',
-    '.mh-cart-slot .mini-cart-thumb{border-right-color:var(--mh-line)!important;transition:border-color .45s ease}',
+    '.mh-cart-slot .mini-cart-box{min-width:190px!important;height:22px!important;border-color:var(--mh-line)!important;transition:border-color .45s ease}',
+    '.mh-cart-slot .mini-cart-thumb{width:22px!important;height:22px!important;padding:2px!important;border-right-color:var(--mh-line)!important;transition:border-color .45s ease}',
     '.mh-cart-slot .cart-toggle:hover{text-decoration:none!important}',
     '.mh-cart-slot .mini-cart-plus{object-position:-999px 0;background-color:var(--mh-ink);-webkit-mask:var(--mh-plus) center/contain no-repeat;mask:var(--mh-plus) center/contain no-repeat;transition:background-color .45s ease}',
     '.cart-panel{z-index:1001!important}',
     '.mh-menu{display:none}',
     // phones: the MENU button opens a full-screen sheet with the same links
     '@media (max-width:' + NARROW + 'px){',
-    '  :root{--mh-row:58px;--mh-pad:20px}',
+    '  :root{--mh-row:44px;--mh-pad:20px}',
     '  .mh-nav{display:none}.mh-menu{display:inline-block}.mh-row{gap:16px}',
     '  .mh-cart-slot .mini-cart-box{width:96px!important}',
     '  .mh-sheet{position:fixed;left:0;right:0;top:var(--mh-row);bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;',
@@ -659,7 +659,7 @@
     mark.style.setProperty('--mh-logo', 'url("' + src + '")');
     H.logo = src;
     var probe = new Image();
-    probe.onload = function () { if (probe.naturalHeight) mark.style.width = Math.round(26 * probe.naturalWidth / probe.naturalHeight) + 'px'; };
+    probe.onload = function () { if (probe.naturalHeight) mark.style.width = Math.round(16 * probe.naturalWidth / probe.naturalHeight) + 'px'; };
     probe.src = src;
     h.style.setProperty('--mh-plus', 'url("' + PLUS + '")');
     // default look (A): the darker glass, with light words that follow the page underneath until it shows.
