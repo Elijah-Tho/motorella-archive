@@ -208,11 +208,11 @@
     '    transition:max-height .42s cubic-bezier(.2,.75,.15,1),padding .42s cubic-bezier(.2,.75,.15,1),opacity .3s ease .08s}',
     '}',
     '@media (max-width:' + NARROW + 'px){',
-    // phones: fixed at the bottom of the screen while scrolling products, pushed up cleanly once the footer enters view
+    // phones: fixed at the bottom of the screen while scrolling products, lifted upward via --mh-bar-lift once the footer enters view
     '  html.mh-shop .mtla-toggle-bar{position:fixed!important;left:50%!important;right:auto!important;top:auto!important;',
     '    bottom:calc(20px + env(safe-area-inset-bottom,0px))!important;margin:0!important;',
-    '    transform:translateX(-50%) scale(2.1)!important;transform-origin:50% 100%!important;z-index:60;filter:drop-shadow(0 3px 6px rgba(0,0,0,.16))}',
-    '  html.mh-shop .shop-body{padding-bottom:96px!important}',
+    '    transform:translate3d(-50%,calc(-1px * var(--mh-bar-lift,0)),0) scale(2.1)!important;transform-origin:50% 100%!important;z-index:60;filter:drop-shadow(0 3px 6px rgba(0,0,0,.16))}',
+    '  html.mh-shop .shop-body{padding-bottom:104px!important}',
     // a fabric filter change: the products on screen fade, blur and lift away one by one as on computers, swap while
     // hidden, and the new ones come back the same way. Only the ones in sight move (phones can't blur every product
     // at once, nor the whole list as one tall layer, and showed the change with no motion at all); the rest simply
@@ -415,7 +415,7 @@
     '  letter-spacing:.09em;color:#3c3c3c;background:rgba(241,241,241,.88);border:1px solid rgba(60,60,60,.12);border-radius:3px;white-space:nowrap;',
     '  font-family:"Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif;pointer-events:none}',
     '.product-card.is-sold-out,.product-card.is-sold-out .product-image{opacity:1!important;filter:none!important}',
-    '.size-option.is-sold-out,.product-card.is-sold-out .size-option{text-decoration:line-through;pointer-events:none!important;cursor:default!important}',
+    '.size-option.is-sold-out,.product-card.is-sold-out .size-option,.product-card[data-sold-out="true"] .size-option{opacity:.45;text-decoration:line-through;pointer-events:none!important;cursor:default!important}',
     '.mh-tip{position:fixed;left:0;top:0;z-index:1200;box-sizing:content-box;margin:0;padding:4px 7px 3px;font-size:9px;line-height:11px;font-weight:700;letter-spacing:.09em;',
     '  color:#3c3c3c;background:rgba(241,241,241,.88);border:1px solid rgba(60,60,60,.12);border-radius:3px;white-space:nowrap;pointer-events:none;',
     '  font-family:"Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif;opacity:0;transition:opacity .15s ease}',
@@ -990,21 +990,21 @@
     var ticking = false;
     function update() {
       ticking = false;
-      var bar = document.querySelector('.mtla-toggle-bar');
-      var foots = document.querySelectorAll('.mtla-footer--shop, footer');
-      var foot = null;
-      for (var i = 0; i < foots.length; i++) {
-        if (foots[i].offsetHeight > 0) { foot = foots[i]; break; }
-      }
-      if (!bar) return;
-      if (window.innerWidth > NARROW || !foot) {
-        bar.style.removeProperty('bottom');
+      if (window.innerWidth > NARROW) {
+        document.documentElement.style.removeProperty('--mh-bar-lift');
         return;
       }
       var vh = document.documentElement.clientHeight || window.innerHeight;
-      var ft = foot.getBoundingClientRect().top;
-      var lift = Math.max(0, vh - ft);
-      bar.style.setProperty('bottom', 'calc(' + (20 + Math.ceil(lift)) + 'px + env(safe-area-inset-bottom,0px))', 'important');
+      var targets = document.querySelectorAll('.mtla-footer--shop, footer, .mh-news');
+      var topEdge = Infinity;
+      for (var i = 0; i < targets.length; i++) {
+        var r = targets[i].getBoundingClientRect();
+        if (r.height > 0 && r.top < topEdge) topEdge = r.top;
+      }
+      if (topEdge === Infinity) return;
+      // lift the knit pill so its bottom edge stops 14px above the footer / email signup
+      var lift = Math.max(0, Math.ceil(vh - topEdge + 14));
+      document.documentElement.style.setProperty('--mh-bar-lift', String(lift));
     }
     function onScroll() {
       if (!ticking) {
@@ -1013,10 +1013,13 @@
       }
     }
     window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+    document.addEventListener('scroll', onScroll, { passive: true, capture: true });
     window.addEventListener('touchmove', onScroll, { passive: true });
     window.addEventListener('resize', update);
-    setTimeout(update, 300);
-    setTimeout(update, 1000);
+    if ('ResizeObserver' in window) new ResizeObserver(update).observe(document.body);
+    setTimeout(update, 150);
+    setTimeout(update, 600);
+    setTimeout(update, 1500);
     update();
   }
   // the fabric button's dots go down while pressed and come back up when let go; a quick tap still shows the press
@@ -1239,45 +1242,45 @@
         if (!name || (t && t.textContent.trim().toLowerCase() === String(name).trim().toLowerCase())) c.setAttribute('data-sold-out', on === false ? 'false' : 'true');
       });
     };
-    // sold-out products cannot be added to the cart from either the quick-add sizes or the product view
-    document.addEventListener('click', function (e) {
-      var sz = e.target.closest && e.target.closest('.product-card .size-option');
-      var card = sz && sz.closest('.product-card');
-      if (card && (card.classList.contains('is-sold-out') || isSoldOut(card))) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        tip.style.transform = 'translate(' + (e.clientX + 14) + 'px,' + (e.clientY + 14) + 'px)';
-        tip.classList.add('is-on');
-        setTimeout(function () { tip.classList.remove('is-on'); }, 1200);
-        return;
+    // sold-out products cannot be added to the cart from either quick-add sizes or product view
+    function cardIsSoldOut(card) {
+      if (!card) return false;
+      return card.classList.contains('is-sold-out') || isSoldOut(card) || !!card.querySelector('.mh-soldout');
+    }
+    function blockSoldOut(e) {
+      var sz = e.target.closest && e.target.closest('.size-option');
+      if (sz) {
+        var card = sz.closest('.product-card') || (sz.parentElement && sz.parentElement.parentElement);
+        var szOut = sz.classList.contains('is-sold-out') || (sz.getAttribute('data-sold-out') || '').toLowerCase() === 'true';
+        if (szOut || cardIsSoldOut(card)) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          if ((e.type === 'click' || e.type === 'touchend') && e.clientX) {
+            tip.style.transform = 'translate(' + (e.clientX + 14) + 'px,' + (e.clientY + 14) + 'px)';
+            tip.classList.add('is-on');
+            setTimeout(function () { tip.classList.remove('is-on'); }, 1200);
+          }
+          return false;
+        }
       }
       var add = e.target.closest && e.target.closest('.pv-section-secondary');
       var last = window.__mhSoldOutCard;
-      if (!add || !last || !last.classList.contains('is-sold-out')) return;
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      tip.style.transform = 'translate(' + (e.clientX + 14) + 'px,' + (e.clientY + 14) + 'px)';
-      tip.classList.add('is-on');
-      setTimeout(function () { tip.classList.remove('is-on'); }, 1200);
-    }, true);
-    document.addEventListener('click', function (e) {
-      var c = e.target.closest('.product-card');
-      if (c && !c.classList.contains('is-sold-out')) window.__mhSoldOutCard = null;
-    }, true);
-    // label the product view's button while a sold-out product is open
-    var mo = new MutationObserver(function () {
-      var last = window.__mhSoldOutCard;
-      [].forEach.call(document.querySelectorAll('.pv-add-glow,.pv-add-text'), function (s) {
-        if (!s.__mhText) s.__mhText = s.textContent;
-        // (only when it changes: rewriting it on every class change across the page made filter changes heavier)
-        var want = last && last.classList.contains('is-sold-out') ? 'SOLD OUT' : s.__mhText;
-        if (s.textContent !== want) s.textContent = want;
-      });
+      if (add && cardIsSoldOut(last)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        if (e.type === 'click' && e.clientX) {
+          tip.style.transform = 'translate(' + (e.clientX + 14) + 'px,' + (e.clientY + 14) + 'px)';
+          tip.classList.add('is-on');
+          setTimeout(function () { tip.classList.remove('is-on'); }, 1200);
+        }
+        return false;
+      }
+    }
+    ['pointerdown', 'mousedown', 'touchstart', 'touchend', 'click'].forEach(function (evt) {
+      window.addEventListener(evt, blockSoldOut, { capture: true, passive: false });
     });
-    mo.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class', 'style'] });
-  }
-
   // ------------------------------------------------------------------------------------------------ shop: quick add
   // Pointer screens show a product's sizes on hover (CSS). Touch screens: the first tap on a product opens its sizes
   // under it (closing any other); a second tap goes through to the product as before; a tap elsewhere closes them.
