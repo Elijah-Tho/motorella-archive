@@ -1006,8 +1006,8 @@
         if (r.height > 0 && r.top < topEdge) topEdge = r.top;
       }
       if (topEdge === Infinity) return;
-      // Stop 14px above the footer/email bar (bar already starts 20px above viewport bottom, so subtract 6)
-      var lift = Math.max(0, Math.ceil(vh - topEdge - 6));
+      // Center the knit pill in the space between the last row of products and the footer/email bar
+      var lift = Math.max(0, Math.ceil(vh - topEdge + 22));
       document.documentElement.style.setProperty('--mh-bar-lift', String(lift));
     }
     function onScroll() {
@@ -2277,7 +2277,23 @@
         if (src.parentNode !== foot || foot.lastChild !== src) foot.appendChild(src);
         if (mq.matches) {
           src.style.top = '';
+          foot.style.removeProperty('margin-left');
+          foot.style.removeProperty('width');
+          var parentLeft = foot.parentElement ? foot.parentElement.getBoundingClientRect().left : 0;
+          var pad = 20;
+          var offset = Math.max(0, parentLeft - pad);
+          foot.style.setProperty('padding-left', Math.max(0, pad - parentLeft) + 'px', 'important');
+          foot.style.setProperty('padding-right', Math.max(0, pad - parentLeft) + 'px', 'important');
+          if (offset > 0) {
+            foot.style.setProperty('margin-left', -offset + 'px', 'important');
+            foot.style.setProperty('width', 'calc(100% + ' + (offset * 2) + 'px)', 'important');
+          }
           return;
+        }
+        foot.style.removeProperty('padding-left');
+        foot.style.removeProperty('padding-right');
+        foot.style.removeProperty('margin-left');
+        foot.style.removeProperty('width');
         }
         var fr = foot.getBoundingClientRect(), rg = document.createRange(), cy = 0;
         for (var c = foot.firstChild; c; c = c.nextSibling) {
