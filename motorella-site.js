@@ -2294,7 +2294,6 @@
         foot.style.removeProperty('padding-right');
         foot.style.removeProperty('margin-left');
         foot.style.removeProperty('width');
-        }
         var fr = foot.getBoundingClientRect(), rg = document.createRange(), cy = 0;
         for (var c = foot.firstChild; c; c = c.nextSibling) {
           if (c === src) continue;
