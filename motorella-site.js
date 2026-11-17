@@ -1007,7 +1007,7 @@
       }
       if (topEdge === Infinity) return;
       // Center the knit pill in the red target space below the last row of products
-      var lift = Math.max(0, Math.ceil(vh - topEdge + 14));
+      var lift = Math.max(0, Math.ceil(vh - topEdge + 36));
       document.documentElement.style.setProperty('--mh-bar-lift', String(lift));
     }
     function onScroll() {
