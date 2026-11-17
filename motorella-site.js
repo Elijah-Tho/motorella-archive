@@ -1005,8 +1005,8 @@
         var gr = grid.getBoundingClientRect();
         // Once the bottom of the last product row rises above the viewport's bottom,
         // stop the knit pill 46px below the last row (right in the space under the prices)
-        if (gr.bottom < vh - 50) {
-          lift = (vh - 50) - gr.bottom;
+        if (gr.bottom < vh - 40) {
+          lift = (vh - 40) - gr.bottom;
         }
       }
       // Also ensure it never dips into the footer/email signup on very short pages
