@@ -2229,7 +2229,7 @@
     '  .mhome-hit:has(.mh-news:hover) .mhome-cover span,.mhome-hit:has(.mh-news:focus-within) .mhome-cover span{opacity:0;transform:translateY(5px);filter:blur(3px)}}',
     // phones: compact box locked to the exact same 175px x 24px size on every page
     '@media (max-width:' + NARROW + 'px){',
-    '  .mh-news.w-form,.mh-news{position:static!important;flex:0 0 175px!important;width:175px!important;min-width:175px!important;max-width:175px!important;',
+    '  .mh-news.w-form,.mh-news{position:relative!important;right:auto!important;top:auto!important;bottom:auto!important;flex:0 0 175px!important;width:175px!important;min-width:175px!important;max-width:175px!important;',
     '    height:24px!important;min-height:24px!important;max-height:24px!important;margin:0 0 0 auto!important;padding:0!important;font-size:8.5px}',
     '  .mh-news input.w-input,.mh-news input[type=email],.mh-news input[type=text]{width:100%!important;min-width:0!important;padding:0 6px!important;font-size:8.5px!important;letter-spacing:.1em!important}',
     '  .mh-news input::placeholder{font-size:8.5px;letter-spacing:.12em}',
