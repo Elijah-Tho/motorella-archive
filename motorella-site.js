@@ -415,8 +415,8 @@
     '.product-card.is-sold-out,.product-card.is-sold-out .product-image{opacity:1!important;filter:none!important}',
     '  letter-spacing:.09em;color:#3c3c3c;background:rgba(241,241,241,.88);border:1px solid rgba(60,60,60,.12);border-radius:3px;white-space:nowrap;',
     '  font-family:"Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif;pointer-events:none}',
-    '.size-option.is-sold-out{opacity:.4;text-decoration:line-through;pointer-events:none}',
-    '.size-option.is-sold-out{opacity:.4;text-decoration:line-through;pointer-events:none}',
+    '.product-card.is-sold-out,.product-card.is-sold-out .product-image{opacity:1!important;filter:none!important}',
+    '.size-option.is-sold-out,.product-card.is-sold-out .size-option{text-decoration:line-through;pointer-events:none!important;cursor:default!important}',
     '.mh-tip{position:fixed;left:0;top:0;z-index:1200;box-sizing:content-box;margin:0;padding:4px 7px 3px;font-size:9px;line-height:11px;font-weight:700;letter-spacing:.09em;',
     '  color:#3c3c3c;background:rgba(241,241,241,.88);border:1px solid rgba(60,60,60,.12);border-radius:3px;white-space:nowrap;pointer-events:none;',
     '  font-family:"Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif;opacity:0;transition:opacity .15s ease}',
@@ -987,21 +987,36 @@
     whenRail(railScroll);
   }
     function stickyBar() {
+    var ticking = false;
     function update() {
+      ticking = false;
       var bar = document.querySelector('.mtla-toggle-bar');
-      var foot = document.querySelector('.mtla-footer--shop');
+      var foots = document.querySelectorAll('.mtla-footer--shop, footer');
+      var foot = null;
+      for (var i = 0; i < foots.length; i++) {
+        if (foots[i].offsetHeight > 0) { foot = foots[i]; break; }
+      }
       if (!bar) return;
       if (window.innerWidth > NARROW || !foot) {
         bar.style.removeProperty('bottom');
         return;
       }
+      var vh = document.documentElement.clientHeight || window.innerHeight;
       var ft = foot.getBoundingClientRect().top;
-      var lift = Math.max(0, window.innerHeight - ft);
-      bar.style.setProperty('bottom', 'calc(' + (20 + Math.round(lift)) + 'px + env(safe-area-inset-bottom,0px))', 'important');
+      var lift = Math.max(0, vh - ft);
+      bar.style.setProperty('bottom', 'calc(' + (20 + Math.ceil(lift)) + 'px + env(safe-area-inset-bottom,0px))', 'important');
     }
-    window.addEventListener('scroll', update, { passive: true });
+    function onScroll() {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+    window.addEventListener('touchmove', onScroll, { passive: true });
     window.addEventListener('resize', update);
     setTimeout(update, 300);
+    setTimeout(update, 1000);
     update();
   }
   // the fabric button's dots go down while pressed and come back up when let go; a quick tap still shows the press
@@ -1224,9 +1239,20 @@
         if (!name || (t && t.textContent.trim().toLowerCase() === String(name).trim().toLowerCase())) c.setAttribute('data-sold-out', on === false ? 'false' : 'true');
       });
     };
-    // an open product that is sold out can't be added to the cart
+    // sold-out products cannot be added to the cart from either the quick-add sizes or the product view
     document.addEventListener('click', function (e) {
-      var add = e.target.closest('.pv-section-secondary');
+      var sz = e.target.closest && e.target.closest('.product-card .size-option');
+      var card = sz && sz.closest('.product-card');
+      if (card && (card.classList.contains('is-sold-out') || isSoldOut(card))) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        tip.style.transform = 'translate(' + (e.clientX + 14) + 'px,' + (e.clientY + 14) + 'px)';
+        tip.classList.add('is-on');
+        setTimeout(function () { tip.classList.remove('is-on'); }, 1200);
+        return;
+      }
+      var add = e.target.closest && e.target.closest('.pv-section-secondary');
       var last = window.__mhSoldOutCard;
       if (!add || !last || !last.classList.contains('is-sold-out')) return;
       e.preventDefault();
