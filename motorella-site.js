@@ -208,10 +208,11 @@
     '    transition:max-height .42s cubic-bezier(.2,.75,.15,1),padding .42s cubic-bezier(.2,.75,.15,1),opacity .3s ease .08s}',
     '}',
     '@media (max-width:' + NARROW + 'px){',
-    // phones: the fabric filter sits at the bottom of the screen, in the middle, twice the size
-    '  html.mh-shop .mtla-toggle-bar{position:fixed!important;left:50%!important;right:auto!important;top:auto!important;bottom:calc(20px + env(safe-area-inset-bottom,0px))!important;margin:0!important;',
-    '    transform:translateX(-50%) scale(2.1);transform-origin:50% 100%;z-index:60;filter:drop-shadow(0 3px 6px rgba(0,0,0,.16))}',
-    '  html.mh-shop .shop-body{padding-bottom:110px!important}',
+    // phones: sticky at the bottom of the viewport while scrolling products, stopping cleanly at the bottom of .shop-body before the footer
+    '  html.mh-shop .shop-body{display:flex!important;flex-direction:column!important;padding-bottom:28px!important}',
+    '  html.mh-shop .mtla-toggle-bar{order:99!important;position:sticky!important;align-self:center!important;left:auto!important;right:auto!important;top:auto!important;',
+    '    bottom:calc(20px + env(safe-area-inset-bottom,0px))!important;margin:24px auto 0!important;',
+    '    transform:scale(2.1)!important;transform-origin:50% 100%!important;z-index:60;filter:drop-shadow(0 3px 6px rgba(0,0,0,.16))}',
     // a fabric filter change: the products on screen fade, blur and lift away one by one as on computers, swap while
     // hidden, and the new ones come back the same way. Only the ones in sight move (phones can't blur every product
     // at once, nor the whole list as one tall layer, and showed the change with no motion at all); the rest simply
@@ -2160,16 +2161,19 @@
     // the film behind it on the home page doesn't dim while the pointer is on the box or someone is typing in it
     '@media (any-hover:hover){.mhome-hit:has(.mh-news:hover) video,.mhome-hit:has(.mh-news:focus-within) video{filter:none;transform:none}',
     '  .mhome-hit:has(.mh-news:hover) .mhome-cover span,.mhome-hit:has(.mh-news:focus-within) .mhome-cover span{opacity:0;transform:translateY(5px);filter:blur(3px)}}',
-    // phones: compact box anchored to the bottom-right corner
+    // phones: compact box locked to the exact same 175px x 24px size on every page
     '@media (max-width:' + NARROW + 'px){',
-    '  .mh-news{position:absolute!important;right:var(--mh-pad,20px)!important;left:auto!important;top:auto!important;bottom:calc(18px + env(safe-area-inset-bottom,0px))!important;',
-    '    width:185px!important;max-width:calc(100vw - 40px)!important;height:24px!important;margin:0!important;font-size:8.5px}',
-    '  .mh-news input.w-input,.mh-news input[type=email],.mh-news input[type=text]{padding:0 6px!important;font-size:8.5px!important;letter-spacing:.1em!important}',
+    '  .mh-news.w-form,.mh-news{position:static!important;flex:0 0 175px!important;width:175px!important;min-width:175px!important;max-width:175px!important;',
+    '    height:24px!important;min-height:24px!important;max-height:24px!important;margin:0 0 0 auto!important;padding:0!important;font-size:8.5px}',
+    '  .mh-news input.w-input,.mh-news input[type=email],.mh-news input[type=text]{width:100%!important;min-width:0!important;padding:0 6px!important;font-size:8.5px!important;letter-spacing:.1em!important}',
     '  .mh-news input::placeholder{font-size:8.5px;letter-spacing:.12em}',
-    '  .mh-news input[type=submit],.mh-news button,.mh-news .w-button{width:54px!important;font-size:8.5px!important;letter-spacing:.12em!important}',
+    '  .mh-news input[type=submit],.mh-news button,.mh-news .w-button{flex:0 0 52px!important;width:52px!important;min-width:52px!important;max-width:52px!important;padding:0!important;font-size:8.5px!important;letter-spacing:.12em!important}',
     '  .mh-news .w-form-done svg{width:14px;height:14px;margin:-7px 0 0 -7px}',
-    '  .mtla-footer--shop.mh-has-news{position:relative!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;text-align:left!important;padding:28px 215px 96px 20px!important}',
-    '  .mhome-foot.mh-has-news{text-align:left!important;padding-left:20px;padding-right:215px}',
+    '  .mtla-footer--shop.mh-has-news,.mhome-foot.mh-has-news{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;',
+    '    width:100%!important;text-align:left!important;white-space:nowrap!important;height:auto!important;min-height:24px!important;box-sizing:border-box!important;',
+    '    padding:16px 20px calc(18px + env(safe-area-inset-bottom,0px))!important}',
+    '  .mtla-footer--shop.mh-has-news > *:not(.mh-news){margin:0!important;flex:0 1 auto!important}',
+    '  .mhome-foot.mh-has-news{padding-top:0!important}',
     '}'
   ].join('\n');
   function newsletter() {
