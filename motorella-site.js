@@ -988,12 +988,12 @@
   }
     function stickyBar() {
     var ticking = false;
-    function update() {
-        var bar = document.querySelector('.mtla-toggle-bar');
+      function update() {
+      ticking = false;
+      var bar = document.querySelector('.mtla-toggle-bar');
       if (bar && window.innerWidth <= NARROW && bar.parentNode !== document.body) {
         document.body.appendChild(bar);
       }
-      ticking = false;
       if (window.innerWidth > NARROW) {
         document.documentElement.style.removeProperty('--mh-bar-lift');
         return;
