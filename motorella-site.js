@@ -212,7 +212,7 @@
     '  html.mh-shop .mtla-toggle-bar{position:fixed!important;left:50%!important;right:auto!important;top:auto!important;',
     '    bottom:calc(20px + env(safe-area-inset-bottom,0px))!important;margin:0!important;',
     '    transform:translate3d(-50%,calc(-1px * var(--mh-bar-lift,0)),0) scale(2.1)!important;transform-origin:50% 100%!important;z-index:60;filter:drop-shadow(0 3px 6px rgba(0,0,0,.16))}',
-    '  html.mh-shop .shop-body{padding-bottom:88px!important}',
+    '  html.mh-shop .shop-body{padding-bottom:116px!important}',
     // a fabric filter change: the products on screen fade, blur and lift away one by one as on computers, swap while
     // hidden, and the new ones come back the same way. Only the ones in sight move (phones can't blur every product
     // at once, nor the whole list as one tall layer, and showed the change with no motion at all); the rest simply
@@ -1006,8 +1006,8 @@
         if (r.height > 0 && r.top < topEdge) topEdge = r.top;
       }
       if (topEdge === Infinity) return;
-      // Center the knit pill in the space between the last row of products and the footer/email bar
-      var lift = Math.max(0, Math.ceil(vh - topEdge + 22));
+      // Center the knit pill in the red target space below the last row of products
+      var lift = Math.max(0, Math.ceil(vh - topEdge + 54));
       document.documentElement.style.setProperty('--mh-bar-lift', String(lift));
     }
     function onScroll() {
@@ -2235,10 +2235,12 @@
     '  .mh-news input::placeholder{font-size:8.5px;letter-spacing:.12em}',
     '  .mh-news input[type=submit],.mh-news button,.mh-news .w-button{flex:0 0 52px!important;width:52px!important;min-width:52px!important;max-width:52px!important;padding:0!important;font-size:8.5px!important;letter-spacing:.12em!important}',
     '  .mh-news .w-form-done svg{width:14px;height:14px;margin:-7px 0 0 -7px}',
-    '  html body .mtla-footer--shop.mh-has-news,html body .mhome-foot.mh-has-news{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;',
-    '    position:relative!important;left:0!important;right:0!important;width:100%!important;max-width:none!important;margin:0!important;text-align:left!important;white-space:nowrap!important;height:auto!important;min-height:24px!important;box-sizing:border-box!important;',
-    '    padding-top:0!important;padding-left:20px!important;padding-right:20px!important;padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))!important}',
-    '  html body .mtla-footer--shop.mh-has-news *:not(.mh-news):not(.mh-news *),html body .mhome-foot.mh-has-news *:not(.mh-news):not(.mh-news *){position:static!important;margin:0!important;padding:0!important;left:auto!important;right:auto!important;transform:none!important;text-align:left!important;flex:0 1 auto!important}',
+    '  .mtla-footer--shop.mh-has-news,.mhome-foot.mh-has-news{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;',
+    '    text-align:left!important;white-space:nowrap!important;height:auto!important;min-height:24px!important;box-sizing:border-box!important;',
+    '    padding-top:0!important;padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))!important}',
+    '  .mhome-foot.mh-has-news{padding-left:20px!important;padding-right:20px!important}',
+    '  .mtla-footer--shop.mh-has-news{width:100%!important;max-width:none!important;padding-left:0!important;padding-right:0!important}',
+    '  .mtla-footer--shop.mh-has-news > *:not(.mh-news),.mhome-foot.mh-has-news > *:not(.mh-news){margin:0!important;padding:0!important;text-indent:0!important;flex:0 1 auto!important}',
     '}'
   ].join('\n');
   function newsletter() {
@@ -2279,14 +2281,15 @@
           src.style.top = '';
           foot.style.removeProperty('margin-left');
           foot.style.removeProperty('width');
-          var parentLeft = foot.parentElement ? foot.parentElement.getBoundingClientRect().left : 0;
-          var pad = 20;
-          var offset = Math.max(0, parentLeft - pad);
-          foot.style.setProperty('padding-left', Math.max(0, pad - parentLeft) + 'px', 'important');
-          foot.style.setProperty('padding-right', Math.max(0, pad - parentLeft) + 'px', 'important');
-          if (offset > 0) {
-            foot.style.setProperty('margin-left', -offset + 'px', 'important');
-            foot.style.setProperty('width', 'calc(100% + ' + (offset * 2) + 'px)', 'important');
+          foot.style.removeProperty('padding-left');
+          foot.style.removeProperty('padding-right');
+          if (foot.classList.contains('mtla-footer--shop')) {
+            var left = foot.getBoundingClientRect().left;
+            var diff = Math.round(20 - left);
+            if (diff !== 0) {
+              foot.style.setProperty('margin-left', diff + 'px', 'important');
+              foot.style.setProperty('width', 'calc(100% - ' + (diff * 2) + 'px)', 'important');
+            }
           }
           return;
         }
