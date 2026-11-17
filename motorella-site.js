@@ -1005,8 +1005,8 @@
         var gr = grid.getBoundingClientRect();
         // Once the bottom of the last product row rises above the viewport's bottom,
         // stop the knit pill 46px below the last row (right in the space under the prices)
-        if (gr.bottom < vh - 40) {
-          lift = (vh - 40) - gr.bottom;
+        if (gr.bottom < vh - 6) {
+          lift = (vh - 6) - gr.bottom;
         }
       }
       // Also ensure it never dips into the footer/email signup on very short pages
@@ -2245,10 +2245,9 @@
     '  .mh-news input[type=submit],.mh-news button,.mh-news .w-button{flex:0 0 52px!important;width:52px!important;min-width:52px!important;max-width:52px!important;padding:0!important;font-size:8.5px!important;letter-spacing:.12em!important}',
     '  .mh-news .w-form-done svg{width:14px;height:14px;margin:-7px 0 0 -7px}',
     '  .mtla-footer--shop.mh-has-news,.mhome-foot.mh-has-news{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;',
-    '    width:100%!important;text-align:left!important;white-space:nowrap!important;height:auto!important;min-height:24px!important;box-sizing:border-box!important;',
-    '    padding:16px 20px calc(18px + env(safe-area-inset-bottom,0px))!important}',
-    '  .mtla-footer--shop.mh-has-news > *:not(.mh-news){margin:0!important;flex:0 1 auto!important}',
-    '  .mhome-foot.mh-has-news{padding-top:0!important}',
+    '    width:100%!important;max-width:none!important;margin:0!important;text-align:left!important;white-space:nowrap!important;height:auto!important;min-height:24px!important;box-sizing:border-box!important;',
+    '    padding:0 20px calc(22px + env(safe-area-inset-bottom,0px))!important}',
+    '  .mtla-footer--shop.mh-has-news > *:not(.mh-news),.mhome-foot.mh-has-news > *:not(.mh-news){margin:0!important;padding:0!important;flex:0 1 auto!important}',
     '}'
   ].join('\n');
   function newsletter() {
