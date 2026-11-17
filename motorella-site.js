@@ -208,11 +208,11 @@
     '    transition:max-height .42s cubic-bezier(.2,.75,.15,1),padding .42s cubic-bezier(.2,.75,.15,1),opacity .3s ease .08s}',
     '}',
     '@media (max-width:' + NARROW + 'px){',
-    // phones: sticky at the bottom of the viewport while scrolling products, stopping cleanly at the bottom of .shop-body before the footer
-    '  html.mh-shop .shop-body{display:flex!important;flex-direction:column!important;padding-bottom:28px!important}',
-    '  html.mh-shop .mtla-toggle-bar{order:99!important;position:sticky!important;align-self:center!important;left:auto!important;right:auto!important;top:auto!important;',
-    '    bottom:calc(20px + env(safe-area-inset-bottom,0px))!important;margin:24px auto 0!important;',
-    '    transform:scale(2.1)!important;transform-origin:50% 100%!important;z-index:60;filter:drop-shadow(0 3px 6px rgba(0,0,0,.16))}',
+    // phones: fixed at the bottom of the screen while scrolling products, pushed up cleanly once the footer enters view
+    '  html.mh-shop .mtla-toggle-bar{position:fixed!important;left:50%!important;right:auto!important;top:auto!important;',
+    '    bottom:calc(20px + env(safe-area-inset-bottom,0px))!important;margin:0!important;',
+    '    transform:translateX(-50%) scale(2.1)!important;transform-origin:50% 100%!important;z-index:60;filter:drop-shadow(0 3px 6px rgba(0,0,0,.16))}',
+    '  html.mh-shop .shop-body{padding-bottom:72px!important}',
     // a fabric filter change: the products on screen fade, blur and lift away one by one as on computers, swap while
     // hidden, and the new ones come back the same way. Only the ones in sight move (phones can't blur every product
     // at once, nor the whole list as one tall layer, and showed the change with no motion at all); the rest simply
@@ -412,9 +412,10 @@
     '}',
     // the sold-out tag: the box the world simulation shows over the console and the rest, at the top right of the photo
     '.mh-soldout{position:absolute;left:0;top:8px;transform:translateX(-100%);z-index:2;box-sizing:content-box;margin:0;padding:4px 7px 3px;font-size:9px;line-height:11px;font-weight:700;',
+    '.product-card.is-sold-out,.product-card.is-sold-out .product-image{opacity:1!important;filter:none!important}',
     '  letter-spacing:.09em;color:#3c3c3c;background:rgba(241,241,241,.88);border:1px solid rgba(60,60,60,.12);border-radius:3px;white-space:nowrap;',
     '  font-family:"Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif;pointer-events:none}',
-    '.product-card.is-sold-out .product-image{opacity:.7;filter:grayscale(.3);transition:opacity .3s ease}',
+    '.size-option.is-sold-out{opacity:.4;text-decoration:line-through;pointer-events:none}',
     '.size-option.is-sold-out{opacity:.4;text-decoration:line-through;pointer-events:none}',
     '.mh-tip{position:fixed;left:0;top:0;z-index:1200;box-sizing:content-box;margin:0;padding:4px 7px 3px;font-size:9px;line-height:11px;font-weight:700;letter-spacing:.09em;',
     '  color:#3c3c3c;background:rgba(241,241,241,.88);border:1px solid rgba(60,60,60,.12);border-radius:3px;white-space:nowrap;pointer-events:none;',
@@ -984,6 +985,24 @@
     filterFade();
     pressDots();
     whenRail(railScroll);
+  }
+    function stickyBar() {
+    function update() {
+      var bar = document.querySelector('.mtla-toggle-bar');
+      var foot = document.querySelector('.mtla-footer--shop');
+      if (!bar) return;
+      if (window.innerWidth > NARROW || !foot) {
+        bar.style.removeProperty('bottom');
+        return;
+      }
+      var ft = foot.getBoundingClientRect().top;
+      var lift = Math.max(0, window.innerHeight - ft);
+      bar.style.setProperty('bottom', 'calc(' + (20 + Math.round(lift)) + 'px + env(safe-area-inset-bottom,0px))', 'important');
+    }
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    setTimeout(update, 300);
+    update();
   }
   // the fabric button's dots go down while pressed and come back up when let go; a quick tap still shows the press
   // for a moment before it springs back (they never stay down)
