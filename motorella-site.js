@@ -212,7 +212,7 @@
     '  html.mh-shop .mtla-toggle-bar{position:fixed!important;left:50%!important;right:auto!important;top:auto!important;',
     '    bottom:calc(20px + env(safe-area-inset-bottom,0px))!important;margin:0!important;',
     '    transform:translate3d(-50%,calc(-1px * var(--mh-bar-lift,0)),0) scale(2.1)!important;transform-origin:50% 100%!important;z-index:60;filter:drop-shadow(0 3px 6px rgba(0,0,0,.16))}',
-    '  html.mh-shop .shop-body{padding-bottom:116px!important}',
+    '  html.mh-shop .shop-body{padding-bottom:88px!important}',
     // a fabric filter change: the products on screen fade, blur and lift away one by one as on computers, swap while
     // hidden, and the new ones come back the same way. Only the ones in sight move (phones can't blur every product
     // at once, nor the whole list as one tall layer, and showed the change with no motion at all); the rest simply
@@ -1007,7 +1007,7 @@
       }
       if (topEdge === Infinity) return;
       // Center the knit pill in the red target space below the last row of products
-      var lift = Math.max(0, Math.ceil(vh - topEdge + 54));
+      var lift = Math.max(0, Math.ceil(vh - topEdge + 14));
       document.documentElement.style.setProperty('--mh-bar-lift', String(lift));
     }
     function onScroll() {
