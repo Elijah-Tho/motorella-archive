@@ -2160,16 +2160,16 @@
     // the film behind it on the home page doesn't dim while the pointer is on the box or someone is typing in it
     '@media (any-hover:hover){.mhome-hit:has(.mh-news:hover) video,.mhome-hit:has(.mh-news:focus-within) video{filter:none;transform:none}',
     '  .mhome-hit:has(.mh-news:hover) .mhome-cover span,.mhome-hit:has(.mh-news:focus-within) .mhome-cover span{opacity:0;transform:translateY(5px);filter:blur(3px)}}',
-    // phones: a full-width row above the copyright (typing at 16px, so the phone doesn't zoom in on it)
+    // phones: compact box anchored to the bottom-right corner
     '@media (max-width:' + NARROW + 'px){',
-    '  .mh-news{position:relative!important;right:auto;top:auto!important;width:auto!important;max-width:420px;height:38px!important;margin:0 auto 14px!important;font-size:10px}',
-    '  .mh-news input.w-input,.mh-news input[type=email],.mh-news input[type=text]{font-size:16px!important;letter-spacing:.06em!important}',
-    '  .mh-news input::placeholder{font-size:10px}',
-    '  .mh-news input[type=submit],.mh-news button,.mh-news .w-button{width:88px!important}',
-    '  .mh-news input:-webkit-autofill,.mh-news input:-webkit-autofill:hover,.mh-news input:-webkit-autofill:focus{font-size:16px!important;letter-spacing:.06em!important}',
-    '  .mh-news .w-form-done svg{width:18px;height:18px;margin:-9px 0 0 -9px}',
-    '  .mtla-footer--shop.mh-has-news{display:block!important;height:auto!important;padding:28px 20px 96px!important;text-align:center}',
-    '  .mhome-foot.mh-has-news{padding-left:20px;padding-right:20px}',
+    '  .mh-news{position:absolute!important;right:var(--mh-pad,20px)!important;left:auto!important;top:auto!important;bottom:calc(18px + env(safe-area-inset-bottom,0px))!important;',
+    '    width:185px!important;max-width:calc(100vw - 40px)!important;height:24px!important;margin:0!important;font-size:8.5px}',
+    '  .mh-news input.w-input,.mh-news input[type=email],.mh-news input[type=text]{padding:0 6px!important;font-size:8.5px!important;letter-spacing:.1em!important}',
+    '  .mh-news input::placeholder{font-size:8.5px;letter-spacing:.12em}',
+    '  .mh-news input[type=submit],.mh-news button,.mh-news .w-button{width:54px!important;font-size:8.5px!important;letter-spacing:.12em!important}',
+    '  .mh-news .w-form-done svg{width:14px;height:14px;margin:-7px 0 0 -7px}',
+    '  .mtla-footer--shop.mh-has-news{position:relative!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;text-align:left!important;padding:28px 215px 96px 20px!important}',
+    '  .mhome-foot.mh-has-news{text-align:left!important;padding-left:20px;padding-right:215px}',
     '}'
   ].join('\n');
   function newsletter() {
@@ -2204,14 +2204,12 @@
       }
       if (fail) fail.innerHTML = '<div>Could not send — try again</div>';
       var mq = window.matchMedia('(max-width:' + NARROW + 'px)');
-      // desktop: level with the copyright line, at the right; phone: first in the footer, above the copyright
-      function place() {
+        function place() {
+        if (src.parentNode !== foot || foot.lastChild !== src) foot.appendChild(src);
         if (mq.matches) {
-          if (foot.firstChild !== src) foot.insertBefore(src, foot.firstChild);
           src.style.top = '';
           return;
         }
-        if (src.parentNode !== foot || foot.lastChild !== src) foot.appendChild(src);
         var fr = foot.getBoundingClientRect(), rg = document.createRange(), cy = 0;
         for (var c = foot.firstChild; c; c = c.nextSibling) {
           if (c === src) continue;
