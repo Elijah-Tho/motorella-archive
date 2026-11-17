@@ -989,6 +989,10 @@
     function stickyBar() {
     var ticking = false;
     function update() {
+        var bar = document.querySelector('.mtla-toggle-bar');
+      if (bar && window.innerWidth <= NARROW && bar.parentNode !== document.body) {
+        document.body.appendChild(bar);
+      }
       ticking = false;
       if (window.innerWidth > NARROW) {
         document.documentElement.style.removeProperty('--mh-bar-lift');
@@ -1278,9 +1282,23 @@
         return false;
       }
     }
-    ['pointerdown', 'mousedown', 'touchstart', 'touchend', 'click'].forEach(function (evt) {
+        ['pointerdown', 'mousedown', 'touchstart', 'touchend', 'click'].forEach(function (evt) {
       window.addEventListener(evt, blockSoldOut, { capture: true, passive: false });
     });
+    document.addEventListener('click', function (e) {
+      var c = e.target.closest && e.target.closest('.product-card');
+      if (c && !cardIsSoldOut(c)) window.__mhSoldOutCard = null;
+    }, true);
+    var mo = new MutationObserver(function () {
+      var last = window.__mhSoldOutCard;
+      [].forEach.call(document.querySelectorAll('.pv-add-glow,.pv-add-text'), function (s) {
+        if (!s.__mhText) s.__mhText = s.textContent;
+        var want = last && cardIsSoldOut(last) ? 'SOLD OUT' : s.__mhText;
+        if (s.textContent !== want) s.textContent = want;
+      });
+    });
+    mo.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class', 'style'] });
+  }
   // ------------------------------------------------------------------------------------------------ shop: quick add
   // Pointer screens show a product's sizes on hover (CSS). Touch screens: the first tap on a product opens its sizes
   // under it (closing any other); a second tap goes through to the product as before; a tap elsewhere closes them.
