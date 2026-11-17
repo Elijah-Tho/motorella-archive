@@ -212,7 +212,7 @@
     '  html.mh-shop .mtla-toggle-bar{position:fixed!important;left:50%!important;right:auto!important;top:auto!important;',
     '    bottom:calc(20px + env(safe-area-inset-bottom,0px))!important;margin:0!important;',
     '    transform:translate3d(-50%,calc(-1px * var(--mh-bar-lift,0)),0) scale(2.1)!important;transform-origin:50% 100%!important;z-index:60;filter:drop-shadow(0 3px 6px rgba(0,0,0,.16))}',
-    '  html.mh-shop .shop-body{padding-bottom:104px!important}',
+    '  html.mh-shop .shop-body{padding-bottom:76px!important}',
     // a fabric filter change: the products on screen fade, blur and lift away one by one as on computers, swap while
     // hidden, and the new ones come back the same way. Only the ones in sight move (phones can't blur every product
     // at once, nor the whole list as one tall layer, and showed the change with no motion at all); the rest simply
@@ -414,7 +414,7 @@
     '.mh-soldout{position:absolute;left:0;top:8px;transform:translateX(-100%);z-index:2;box-sizing:content-box;margin:0;padding:4px 7px 3px;font-size:9px;line-height:11px;font-weight:700;',
     '  letter-spacing:.09em;color:#3c3c3c;background:rgba(241,241,241,.88);border:1px solid rgba(60,60,60,.12);border-radius:3px;white-space:nowrap;',
     '  font-family:"Trebuchet MS","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Tahoma,sans-serif;pointer-events:none}',
-    '.product-card.is-sold-out,.product-card.is-sold-out .product-image{opacity:1!important;filter:none!important}',
+    '.product-card.is-sold-out .product-image{opacity:1!important;filter:none!important}',
     '.size-option.is-sold-out,.product-card.is-sold-out .size-option,.product-card[data-sold-out="true"] .size-option{opacity:.45;text-decoration:line-through;pointer-events:none!important;cursor:default!important}',
     '.mh-tip{position:fixed;left:0;top:0;z-index:1200;box-sizing:content-box;margin:0;padding:4px 7px 3px;font-size:9px;line-height:11px;font-weight:700;letter-spacing:.09em;',
     '  color:#3c3c3c;background:rgba(241,241,241,.88);border:1px solid rgba(60,60,60,.12);border-radius:3px;white-space:nowrap;pointer-events:none;',
@@ -986,9 +986,9 @@
     stickyBar();
     whenRail(railScroll);
   }
-    function stickyBar() {
+  function stickyBar() {
     var ticking = false;
-      function update() {
+    function update() {
       ticking = false;
       var bar = document.querySelector('.mtla-toggle-bar');
       if (bar && window.innerWidth <= NARROW && bar.parentNode !== document.body) {
@@ -999,16 +999,25 @@
         return;
       }
       var vh = document.documentElement.clientHeight || window.innerHeight;
+      var grid = document.querySelector('.product-grid');
+      var lift = 0;
+      if (grid) {
+        var gr = grid.getBoundingClientRect();
+        // Once the bottom of the last product row rises above the viewport's bottom,
+        // stop the knit pill 46px below the last row (right in the space under the prices)
+        if (gr.bottom < vh - 50) {
+          lift = (vh - 50) - gr.bottom;
+        }
+      }
+      // Also ensure it never dips into the footer/email signup on very short pages
       var targets = document.querySelectorAll('.mtla-footer--shop, footer, .mh-news');
-      var topEdge = Infinity;
       for (var i = 0; i < targets.length; i++) {
         var r = targets[i].getBoundingClientRect();
-        if (r.height > 0 && r.top < topEdge) topEdge = r.top;
+        if (r.height > 0) {
+          lift = Math.max(lift, vh - r.top + 12);
+        }
       }
-      if (topEdge === Infinity) return;
-      // lift the knit pill so its bottom edge stops 14px above the footer / email signup
-      var lift = Math.max(0, Math.ceil(vh - topEdge + 14));
-      document.documentElement.style.setProperty('--mh-bar-lift', String(lift));
+      document.documentElement.style.setProperty('--mh-bar-lift', String(Math.max(0, Math.ceil(lift))));
     }
     function onScroll() {
       if (!ticking) {
